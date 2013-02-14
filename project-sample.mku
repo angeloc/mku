@@ -1,0 +1,12 @@
+# Distro version, chooose from precise, quantal
+[ROOTFS]
+VERSION = quantal
+BOARD = beaglebone
+RUNTIME_DEPS = ""
+
+[DEVEL]
+SETUP_EMULATED_DEVENV = yes
+
+
+
+

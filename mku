@@ -1,0 +1,107 @@
+#! /usr/bin/python3
+
+import subprocess
+import argparse
+import os
+import configparser
+import sys
+import importlib
+
+DEPS_PKGS = "qemu-user-static curl"
+DEPS = ["qemu-arm-static", "curl"]
+BOARD_CONFIGS_PATH = "/home/angelo/DEV/MKU/boards/"
+PRECISE_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/precise/release/ubuntu-core-12.04.1-core-armhf.tar.gz"
+QUANTAL_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/quantal/release/ubuntu-core-12.10-core-armhf.tar.gz"
+PROJECT_FILENAME = "project.mku"
+
+#GLOBAL VARIABLES FROM COMFIGURATION FILE
+core_url = ""
+os_version = ""
+board_script = ""
+args = None
+
+sys.path.append(BOARD_CONFIGS_PATH)
+
+def check_args():
+  parser = argparse.ArgumentParser()
+  
+  parser.add_argument("mode", 
+    help = '''prepare  :  prepares the environment, makes folders, downloads software\n
+          setdevenv:  sets up the development environment\n
+          push     :  pushes the software to the selected device\n
+          ''',
+    choices=['prepare', 'install_boot', 'install_rootfs', 'pack'])
+  
+  global args
+  args = parser.parse_args()
+  
+
+def get_configuration_from_file():
+  global os_version
+  global board_script
+  config = configparser.ConfigParser()
+  try:
+    open(os.path.join(os.getcwd(), PROJECT_FILENAME))
+  except:
+    return False
+  config.read(os.path.join(os.getcwd(), PROJECT_FILENAME))
+  os_version = config['ROOTFS']['VERSION'].upper()
+  board_script = config['ROOTFS']['BOARD']
+  return True
+
+def deps_installed():
+  ret = True
+  try:
+    for dep in DEPS:
+      output = subprocess.check_output(["which" , dep])
+  except:
+    ret = False
+  return ret
+
+def prepare():
+  if not deps_installed():
+    print("""
+    %s cannot work on this machine. To make it work:
+    apt-get install %s
+    """ % ("mku", DEPS_PKGS))
+
+  curpath = os.getcwd()
+  directories = ["tmp", "rootfs_dev", "rootfs", "boot", "src", "build"]
+  for directory in directories:
+    try:
+      os.mkdir(os.path.join(curpath, directory))
+    except:
+      pass
+  setup_core()
+  setup_board()
+
+def configure():
+  global core_url
+  if not get_configuration_from_file():
+    print("Cannot find %s in the current directory, please make one before proceed" % PROJECT_FILENAME)
+    exit(1)
+  core_url = eval(os_version + "_CORE_URL")
+
+def setup_core():
+  filepath = os.path.join(os.getcwd(), "tmp", os_version + "-ubuntu-core.tar.gz")
+  rootfs_path = os.path.join(os.getcwd(), "rootfs")
+  print(core_url)
+  ret = subprocess.call(["curl" , "-#", "-o", filepath, "-C", "-", core_url])
+  print("To extract the rootfs we should use root permission, please provide password if requested")
+  ret = subprocess.call(["sudo", "tar", "zxf", filepath, "-C", rootfs_path])
+  ret = subprocess.call(["sudo", "cp" , "/usr/bin/qemu-arm-static", "rootfs/usr/bin/"])
+  if ret:
+    print("Something goes wrong when extracting rootfs")
+    exit(1)
+  return ret
+
+def setup_board():
+  boardlib = importlib.import_module(board_script)
+  boardlib.board_prepare(os_version)
+
+if __name__ == "__main__":
+  check_args()
+  configure()
+  if args.mode == "prepare": prepare()
+  
+  
