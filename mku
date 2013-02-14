@@ -62,7 +62,7 @@ def prepare():
   if not deps_installed():
     print("""
     %s cannot work on this machine. To make it work:
-    apt-get install %s
+    sudo apt-get install %s
     """ % ("mku", DEPS_PKGS))
     exit(1)
 

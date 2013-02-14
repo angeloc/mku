@@ -20,7 +20,7 @@ Install
 
 * Append the folder you cloned to the $PATH in bashrc:
 
-`echo PATH=$PATH:~/mku >> ~/.bashrc`
+`echo "PATH=$PATH:~/mku" >> ~/.bashrc`
 
 * Create a folder for the new rootfs:
 
