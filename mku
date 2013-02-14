@@ -102,7 +102,6 @@ def setup_board():
 
 if __name__ == "__main__":
   check_args()
-  prepare()
   configure()
   if args.mode == "prepare": prepare()
   if args.mode == "install_boot": pass
