@@ -1,11 +1,15 @@
 # Distro version, chooose from precise, quantal
+[PROJECT]
+name = "test_rootfs"
+append_timestamp = yes
+
 [ROOTFS]
 VERSION = quantal
 BOARD = beaglebone
 RUNTIME_DEPS = ""
 
 [DEVEL]
-SETUP_EMULATED_DEVENV = yes
+SETUP_EMULATED_DEVENV = no
 
 
 

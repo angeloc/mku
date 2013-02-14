@@ -64,6 +64,7 @@ def prepare():
     %s cannot work on this machine. To make it work:
     apt-get install %s
     """ % ("mku", DEPS_PKGS))
+    exit(1)
 
   curpath = os.getcwd()
   directories = ["tmp", "rootfs_dev", "rootfs", "boot", "src", "build"]
@@ -101,7 +102,11 @@ def setup_board():
 
 if __name__ == "__main__":
   check_args()
+  prepare()
   configure()
   if args.mode == "prepare": prepare()
+  if args.mode == "install_boot": pass
+  if args.mode == "install_rootfs": pass
+  if args.mode == "pack": pass
   
   
