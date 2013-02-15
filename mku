@@ -1,4 +1,20 @@
-#! /usr/bin/python3
+#!/usr/bin/python3
+#MKU, template based rootfs builder for Ubuntu.
+#Copyright (C) Angelo Compagnucci <angelo.compagnucci@gmail.com> 2013
+
+#This program is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License
+#as published by the Free Software Foundation; either version 2
+#of the License, or (at your option) any later version.
+
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with this program; if not, write to the Free Software
+#Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import subprocess
 import argparse
@@ -6,19 +22,40 @@ import os
 import configparser
 import sys
 import importlib
+import inspect
 
-DEPS_PKGS = "qemu-user-static curl"
 DEPS = ["qemu-arm-static", "curl"]
-BOARD_CONFIGS_PATH = "/home/angelo/DEV/MKU/boards/"
+BOARD_CONFIGS_PATH = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) , "boards")
 PRECISE_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/precise/release/ubuntu-core-12.04.1-core-armhf.tar.gz"
 QUANTAL_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/quantal/release/ubuntu-core-12.10-core-armhf.tar.gz"
 PROJECT_FILENAME = "project.mku"
 
-#GLOBAL VARIABLES FROM COMFIGURATION FILE
-core_url = ""
-os_version = ""
-board_script = ""
-args = None
+#GLOBAL VARIABLES
+core_url          = None
+os_version        = None
+board_script      = None
+runtime_deps      = None
+root_password     = None
+new_user          = None
+new_user_password = None
+new_user_is_admin = None
+args              = None
+rootfs_path = os.path.join(os.getcwd(), "rootfs")
+
+SETUP_SCRIPT = """
+locale-gen en_US.UTF-8
+
+{set_root_password} && echo root:{root_password} | chpasswd
+{set_new_user}      && useradd {new_user} -m -p {new_user_password} {is_admin}
+
+echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
+
+sed -i "/^# deb .*universe/ s/^# //" /etc/apt/sources.list
+sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
+sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
+apt-get update
+apt-get -y install {runtime_deps}
+"""
 
 sys.path.append(BOARD_CONFIGS_PATH)
 
@@ -36,17 +73,46 @@ def check_args():
   args = parser.parse_args()
   
 
-def get_configuration_from_file():
+def get_configuration():
   global os_version
   global board_script
+  global runtime_deps
+  global root_password
+  global new_user
+  global new_user_password
+  global new_user_is_admin
+  global core_url
+  
   config = configparser.ConfigParser()
   try:
     open(os.path.join(os.getcwd(), PROJECT_FILENAME))
   except:
-    return False
+    print("Cannot find %s in the current directory, please make one before proceed" % PROJECT_FILENAME)
+    exit(1)
   config.read(os.path.join(os.getcwd(), PROJECT_FILENAME))
-  os_version = config['ROOTFS']['VERSION'].upper()
-  board_script = config['ROOTFS']['BOARD']
+  
+  # Getting mandatory parameters
+  try:
+    os_version    = config['ROOTFS']['VERSION'].upper()
+    board_script  = config['ROOTFS']['BOARD']
+    runtime_deps  = config['ROOTFS']['RUNTIME_DEPS']
+    root_password = config['ROOTFS']['ROOT_PASSWORD']
+  except Exception as ex:
+    print("%s is missing, please add it to project.mku" % ex)
+    exit(1)
+  
+  try:
+    new_user          = config['ROOTFS']['USER']
+    new_user_password = config['ROOTFS']['PASSWORD']
+    new_user_is_admin = config['ROOTFS']['USER_IS_ADMIN']
+  except:
+    pass
+  
+  if os_version not in ("PRECISE", "QUANTAL"):
+    print("Versions other than precise, quantal are not supperted yet")
+    exit(1)
+  
+  core_url = eval(os_version + "_CORE_URL")
   return True
 
 def deps_installed():
@@ -63,11 +129,11 @@ def prepare():
     print("""
     %s cannot work on this machine. To make it work:
     sudo apt-get install %s
-    """ % ("mku", DEPS_PKGS))
+    """ % ("mku", " ".join(DEPS)))
     exit(1)
 
   curpath = os.getcwd()
-  directories = ["tmp", "rootfs_dev", "rootfs", "boot", "src", "build"]
+  directories = ["tmp", "rootfs", "boot"]
   for directory in directories:
     try:
       os.mkdir(os.path.join(curpath, directory))
@@ -75,24 +141,17 @@ def prepare():
       pass
   setup_core()
   setup_board()
-
-def configure():
-  global core_url
-  if not get_configuration_from_file():
-    print("Cannot find %s in the current directory, please make one before proceed" % PROJECT_FILENAME)
-    exit(1)
-  core_url = eval(os_version + "_CORE_URL")
+  setup_rootfs()
 
 def setup_core():
   filepath = os.path.join(os.getcwd(), "tmp", os_version + "-ubuntu-core.tar.gz")
-  rootfs_path = os.path.join(os.getcwd(), "rootfs")
   print(core_url)
   ret = subprocess.call(["curl" , "-#", "-o", filepath, "-C", "-", core_url])
   print("To extract the rootfs we should use root permission, please provide password if requested")
   ret = subprocess.call(["sudo", "tar", "zxf", filepath, "-C", rootfs_path])
   ret = subprocess.call(["sudo", "cp" , "/usr/bin/qemu-arm-static", "rootfs/usr/bin/"])
   if ret:
-    print("Something goes wrong when extracting rootfs")
+    print("Something went wrong when extracting rootfs")
     exit(1)
   return ret
 
@@ -100,12 +159,27 @@ def setup_board():
   boardlib = importlib.import_module(board_script)
   boardlib.board_prepare(os_version)
 
+def setup_rootfs():
+  setup_script_path = os.path.join(os.getcwd(), "rootfs", "tmp", "setup_script.sh")
+  setup_script_file = open(setup_script_path, "w")
+  setup_script = SETUP_SCRIPT.format(runtime_deps=runtime_deps,
+                                      set_root_password = 'true' if root_password else 'false',
+                                      root_password=root_password,
+                                      set_new_user = 'true' if new_user else 'false',
+                                      new_user=new_user,
+                                      new_user_password=new_user_password,
+                                      is_admin = '-G adm,sudo' if new_user_is_admin else '')
+  setup_script_file.write(setup_script)
+  setup_script_file.close()
+  ret = subprocess.call(["sudo", "chroot", rootfs_path, "/bin/sh", "tmp/setup_script.sh"])
+  ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "tmp/setup_script.sh"])
+
 if __name__ == "__main__":
   check_args()
-  configure()
+  get_configuration()
   if args.mode == "prepare": prepare()
-  if args.mode == "install_boot": pass
-  if args.mode == "install_rootfs": pass
-  if args.mode == "pack": pass
+  if args.mode == "install_boot": print("Not implemented yet!")
+  if args.mode == "install_rootfs": print("Not implemented yet!")
+  if args.mode == "pack": print("Not implemented yet!")
   
   

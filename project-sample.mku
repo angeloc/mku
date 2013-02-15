@@ -1,15 +1,16 @@
 # Distro version, chooose from precise, quantal
 [PROJECT]
-name = "test_rootfs"
+name = "mku_rootfs"
 append_timestamp = yes
 
 [ROOTFS]
-VERSION = quantal
+VERSION = precise
 BOARD = beaglebone
-RUNTIME_DEPS = ""
-
-[DEVEL]
-SETUP_EMULATED_DEVENV = no
+RUNTIME_DEPS = 
+ROOT_PASSWORD =
+# USER = tmpuser
+# PASSWORD = tmppwd
+# USER_IS_ADMIN = yes
 
 
 

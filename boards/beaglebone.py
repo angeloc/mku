@@ -1,3 +1,21 @@
+#MKU, template based rootfs builder for Ubuntu.
+#This file is the template for the beaglebone board.
+#Copyright (C) Angelo Compagnucci <angelo.compagnucci@gmail.com> 2013
+
+#This program is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License
+#as published by the Free Software Foundation; either version 2
+#of the License, or (at your option) any later version.
+
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with this program; if not, write to the Free Software
+#Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 UENV = """kernel_file=zImage
 initrd_file=initrd.img
 
@@ -22,12 +40,12 @@ expansion_args=setenv expansion ip=${ip_method}
 loaduimage=run xyz_mmcboot; run device_args; bootz 0x80300000 0x81600000:${initrd_size}
 """
 
-MLO_URL   = "http://rcn-ee.net/deb/tools/beaglebone/MLO-beaglebone-v2012.10-r1"
-UBOOT_URL = "http://rcn-ee.net/deb/tools/beaglebone/u-boot-beaglebone-v2012.10-r1.img"
-PRECISE_KERNEL_URL = "http://rcn-ee.net/deb/precise-armhf/v3.7.6-x8/linux-image-3.7.6-x8_1.0precise_armhf.deb"
-QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.7.7-x8/linux-image-3.7.7-x8_1.0quantal_armhf.deb"
-PRECISE_KERNEL_SUFFIX = "-3.7.6-x8"
-QUANTAL_KERNEL_SUFFIX = "-3.7.7-x8"
+MLO_URL = "http://rcn-ee.net/deb/tools/beaglebone/MLO-beaglebone-v2013.01-rc2-r0"
+UBOOT_URL = "http://rcn-ee.net/deb/tools/beaglebone/u-boot-beaglebone-v2013.01-rc2-r0.img"
+PRECISE_KERNEL_URL = "http://rcn-ee.net/deb/precise-armhf/v3.2.33-psp26/linux-image-3.2.33-psp26_1.0precise_armhf.deb"
+QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.2.33-psp26/linux-image-3.2.33-psp26_1.0quantal_armhf.deb"
+PRECISE_KERNEL_SUFFIX = "-3.2.33-psp26"
+QUANTAL_KERNEL_SUFFIX = "-3.2.33-psp26"
 
 import subprocess
 import os
@@ -53,8 +71,8 @@ def board_prepare(os_version):
   ret = subprocess.call(["curl" , "-#", "-o", kernel_path, "-C", "-", KERNEL_URL])
   
   #Setting up uEnv.txt
-  ret = subprocess.call(["cp" , mlo_path, "boot"])
-  ret = subprocess.call(["cp" , uboot_path, "boot"])
+  ret = subprocess.call(["cp", "-v", mlo_path, "boot"])
+  ret = subprocess.call(["cp", "-v", uboot_path, "boot"])
   uenv_path = os.path.join(os.getcwd(), "boot", "uEnv.txt")
   uenv = open(uenv_path,"w")
   uenv.write(UENV)
