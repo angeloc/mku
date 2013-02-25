@@ -40,8 +40,8 @@ expansion_args=setenv expansion ip=${ip_method}
 loaduimage=run xyz_mmcboot; run device_args; bootz 0x80300000 0x81600000:${initrd_size}
 """
 
-MLO_URL = "http://rcn-ee.net/deb/tools/beaglebone/MLO-beaglebone-v2013.01-rc2-r0"
-UBOOT_URL = "http://rcn-ee.net/deb/tools/beaglebone/u-boot-beaglebone-v2013.01-rc2-r0.img"
+MLO_URL = "http://rcn-ee.net/deb/tools/beaglebone/MLO-beaglebone-v2013.01.01-r1"
+UBOOT_URL = "http://rcn-ee.net/deb/tools/beaglebone/u-boot-beaglebone-v2013.01.01-r1.img"
 PRECISE_KERNEL_URL = "http://rcn-ee.net/deb/precise-armhf/v3.2.33-psp26/linux-image-3.2.33-psp26_1.0precise_armhf.deb"
 QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.2.33-psp26/linux-image-3.2.33-psp26_1.0quantal_armhf.deb"
 PRECISE_KERNEL_SUFFIX = "-3.2.33-psp26"
