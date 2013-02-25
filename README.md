@@ -22,7 +22,11 @@ Install
 
 `echo "PATH=$PATH:~/mku" >> ~/.bashrc`
 
-* Create a folder for the new rootfs:
+* Create a folder for the new rootfs like `mkurootfs`
+
+* Copy `project-sample.mku` to `mkurootfs/project.mku`
+
+* Change the default values into `project.mku` to suite your needs
 
 * Enter the folder and prepare the environment with:
 
