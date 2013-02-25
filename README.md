@@ -7,9 +7,9 @@ About
 -----
 
 MKU was born with a strong focus on easy rootfs building for the embedded world.
-With MKU you can generate and deploy a custom boot and rootfs, built against ubuntu core, to your embedded platform.
+With MKU you can generate and deploy a custom boot and rootfs, built against Ubuntu core, to your embedded platform.
 
-Everything is handled automatically by the software: it downloads boot files, kernels, ubuntu core, it sets up directory layout, and extract all the necessary files to build a complete boot and rootfs for your board.
+Everything is handled automatically by the software: it downloads boot files, kernels, Ubuntu core, it sets up directory layout, and extract all the necessary files to build a complete boot and rootfs for your board.
 
 Install
 -------
