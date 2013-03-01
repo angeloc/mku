@@ -4,14 +4,18 @@ name = "mku_rootfs"
 append_timestamp = yes
 
 [ROOTFS]
-VERSION = precise
-BOARD = beaglebone
-RUNTIME_DEPS = 
+VERSION       = precise
+BOARD         = beaglebone
+RUNTIME_DEPS  = 
 ROOT_PASSWORD =
-# USER = tmpuser
-# PASSWORD = tmppwd
+# USER          = tmpuser
+# PASSWORD      = tmppwd
 # USER_IS_ADMIN = yes
 
-
-
-
+[NETWORK]
+INTERFACE   = eth0
+USE_DHCP    = yes
+ADDRESS     = 192.168.1.100
+NETMASK     = 255.255.255.0
+GATEWAY     = 192.168.1.254
+DNS_SERVERS = 8.8.8.8 8.8.4.4

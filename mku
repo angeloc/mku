@@ -40,9 +40,18 @@ new_user          = None
 new_user_password = None
 new_user_is_admin = None
 args              = None
+interface         = None
+use_dhcp          = None
+address           = None
+netmask           = None
+address           = None
+dns_servers       = None
+
 rootfs_path = os.path.join(os.getcwd(), "rootfs")
 
+INTERFACES = ""
 SETUP_SCRIPT = """
+echo "{interfaces}" > /etc/network/interfaces
 locale-gen en_US.UTF-8
 
 {set_root_password} && echo root:{root_password} | chpasswd
@@ -82,6 +91,12 @@ def get_configuration():
   global new_user_password
   global new_user_is_admin
   global core_url
+  global interface  
+  global use_dhcp   
+  global address    
+  global netmask    
+  global gateway    
+  global dns_servers
   
   config = configparser.ConfigParser()
   try:
@@ -105,6 +120,16 @@ def get_configuration():
     new_user          = config['ROOTFS']['USER']
     new_user_password = config['ROOTFS']['PASSWORD']
     new_user_is_admin = config['ROOTFS']['USER_IS_ADMIN']
+  except:
+    pass
+  
+  try:
+    interface   = config['NETWORK']['INTERFACE']
+    use_dhcp    = config['NETWORK']['USE_DHCP']
+    address     = config['NETWORK']['ADDRESS']
+    netmask     = config['NETWORK']['NETMASK']
+    gateway     = config['NETWORK']['GATEWAY']
+    dns_servers = config['NETWORK']['DNS_SERVERS']
   except:
     pass
   
@@ -141,13 +166,14 @@ def prepare():
       pass
   setup_core()
   setup_board()
+  setup_network()
   setup_rootfs()
 
 def setup_core():
   filepath = os.path.join(os.getcwd(), "tmp", os_version + "-ubuntu-core.tar.gz")
   print(core_url)
   ret = subprocess.call(["curl" , "-#", "-o", filepath, "-C", "-", core_url])
-  print("To extract the rootfs we should use root permission, please provide password if requested")
+  print("To extract Ubuntu core we should use root permission, please provide password if requested")
   ret = subprocess.call(["sudo", "tar", "zxf", filepath, "-C", rootfs_path])
   ret = subprocess.call(["sudo", "cp" , "/usr/bin/qemu-arm-static", "rootfs/usr/bin/"])
   if ret:
@@ -168,11 +194,32 @@ def setup_rootfs():
                                       set_new_user = 'true' if new_user else 'false',
                                       new_user=new_user,
                                       new_user_password=new_user_password,
-                                      is_admin = '-G adm,sudo' if new_user_is_admin else '')
+                                      is_admin = '-G adm,sudo' if new_user_is_admin else '',
+                                      interfaces=INTERFACES)
   setup_script_file.write(setup_script)
   setup_script_file.close()
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "/bin/sh", "tmp/setup_script.sh"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "tmp/setup_script.sh"])
+
+def setup_network():
+  global INTERFACES
+  INTERFACES += ("auto lo \n"
+                 "iface lo inet loopback \n")
+  if use_dhcp == "yes":
+      INTERFACES +=  ("auto {interface} \n"
+                     "iface {interface} inet dhcp \n".format(interface=interface))
+  else:
+      INTERFACES += ("auto {interface} \n"
+                    "iface {interface} inet static \n"
+                    "address {address} \n"
+                    "netmask {netmask} \n"
+                    "gateway {gateway} \n"
+                    "dns-nameservers {dns_servers}\n".format(interface=interface,
+                                                             address=address,
+                                                             netmask=netmask,
+                                                             gateway=gateway,
+                                                             dns_servers=dns_servers))
+  
 
 if __name__ == "__main__":
   check_args()
