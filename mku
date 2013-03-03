@@ -48,6 +48,7 @@ address           = None
 netmask           = None
 address           = None
 dns_servers       = None
+boardlib          = None
 
 rootfs_path = os.path.join(os.getcwd(), "rootfs")
 
@@ -76,7 +77,7 @@ def check_args():
   
   parser.add_argument("mode", 
     help = '''prepare  :  prepares the environment, makes folders, downloads software''',
-    choices=['prepare', 'pack'])
+    choices=['prepare', 'prepare_kernel', 'pack'])
   
   global args
   args = parser.parse_args()
@@ -100,6 +101,8 @@ def get_configuration():
   global gateway    
   global dns_servers
   
+  global boardlib
+  
   config = configparser.ConfigParser()
   try:
     open(os.path.join(os.getcwd(), PROJECT_FILENAME))
@@ -119,6 +122,8 @@ def get_configuration():
   except Exception as ex:
     print("%s is missing, please add it to project.mku" % ex)
     exit(1)
+  
+  boardlib = importlib.import_module(board_script)
   
   try:
     new_user          = config['ROOTFS']['USER']
@@ -186,7 +191,6 @@ def setup_core():
   return ret
 
 def setup_board():
-  boardlib = importlib.import_module(board_script)
   boardlib.board_prepare(os_version)
 
 def setup_rootfs():
@@ -226,20 +230,25 @@ def setup_network():
                                                              dns_servers=dns_servers))
 
 def pack():
-    from datetime import datetime
-    timestamp = datetime.now().strftime("_%Y_%m_%d_%H_%M") if append_timest else ''
-    boot_pack_path = "dist/" + name + "_boot" + timestamp + ".tar.gz"
-    rootfs_pack_path = "dist/" + name + "_rootfs" + timestamp + ".tar.gz"
-    print("Packing %s, please wait" % boot_pack_path) 
-    ret = subprocess.call(["sudo", "tar", "cfz", boot_pack_path, "boot"])
-    print("Packing %s, please wait" % rootfs_pack_path)
-    ret = subprocess.call(["sudo", "tar", "cfz", rootfs_pack_path, "rootfs"])
+  from datetime import datetime
+  timestamp = datetime.now().strftime("_%Y_%m_%d_%H_%M") if append_timest else ''
+  boot_pack_path = "dist/" + name + "_boot" + timestamp + ".tar.gz"
+  rootfs_pack_path = "dist/" + name + "_rootfs" + timestamp + ".tar.gz"
+  print("Packing %s, please wait" % boot_pack_path) 
+  ret = subprocess.call(["sudo", "tar", "cfz", boot_pack_path, "boot"])
+  print("Packing %s, please wait" % rootfs_pack_path)
+  ret = subprocess.call(["sudo", "tar", "cfz", rootfs_pack_path, "rootfs"])
+    
+
+def prepare_kernel_devenv():
+  boardlib.prepare_kernel_devenv()
     
 
 if __name__ == "__main__":
   check_args()
   get_configuration()
   if args.mode == "prepare": prepare()
+  if args.mode == "prepare_kernel": prepare_kernel_devenv()
   if args.mode == "install_boot": print("Not implemented yet!")
   if args.mode == "install_rootfs": print("Not implemented yet!")
   if args.mode == "pack": pack()

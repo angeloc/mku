@@ -89,3 +89,19 @@ def board_prepare(os_version):
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "/tmp/" + kernel_name])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "-rf", "/boot/"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "mkdir", "/boot/"])
+
+def prepare_kernel_devenv():
+  import os
+  try:
+    output = subprocess.check_output(["which" , "git"])
+  except:
+    print("""
+    Git not installed, you can install it with:
+    sudo apt-get install git""")
+    exit(1)
+  print("This process may take a while, please wait ...")
+  ret = subprocess.call(["git", "clone", "git://github.com/beagleboard/kernel.git"])
+  os.chdir("kernel")
+  ret = subprocess.call(["git", "checkout", "origin/beaglebone-3.2", "-b", "beaglebone-3.2"])
+  ret = subprocess.call(["./patch.sh"])
+  print("Done!")
