@@ -32,3 +32,13 @@ Install
 
 `mku prepare`
 
+* Please wait until it completes, it may take a while due to file downloading.
+
+* When done, you can add your files to the rootfs folder.
+
+* Your rootfs is now done. To use it, copy boot folder and rootfs folder to your embedded board. Generally it's simply a matter of copy these two folders into the corrispectively folders inside a microsd card.
+
+* If you want you can `pack` your boot and rootfs with:
+`mku pack`
+they will be packed in `dist` folder.
+
