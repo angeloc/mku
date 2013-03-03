@@ -31,6 +31,8 @@ QUANTAL_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/quantal/relea
 PROJECT_FILENAME = "project.mku"
 
 #GLOBAL VARIABLES
+name              = None 
+append_timest     = None
 core_url          = None
 os_version        = None
 board_script      = None
@@ -64,6 +66,7 @@ sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
 apt-get update
 apt-get -y install {runtime_deps}
+apt-get clean
 """
 
 sys.path.append(BOARD_CONFIGS_PATH)
@@ -72,17 +75,16 @@ def check_args():
   parser = argparse.ArgumentParser()
   
   parser.add_argument("mode", 
-    help = '''prepare  :  prepares the environment, makes folders, downloads software\n
-          setdevenv:  sets up the development environment\n
-          push     :  pushes the software to the selected device\n
-          ''',
-    choices=['prepare', 'install_boot', 'install_rootfs', 'pack'])
+    help = '''prepare  :  prepares the environment, makes folders, downloads software''',
+    choices=['prepare', 'pack'])
   
   global args
   args = parser.parse_args()
   
 
 def get_configuration():
+  global name
+  global append_timest
   global os_version
   global board_script
   global runtime_deps
@@ -108,6 +110,8 @@ def get_configuration():
   
   # Getting mandatory parameters
   try:
+    name          = config['PROJECT']['NAME']
+    append_timest = True if config['PROJECT']['APPEND_TIMESTAMP'] == 'yes' else False
     os_version    = config['ROOTFS']['VERSION'].upper()
     board_script  = config['ROOTFS']['BOARD']
     runtime_deps  = config['ROOTFS']['RUNTIME_DEPS']
@@ -119,13 +123,13 @@ def get_configuration():
   try:
     new_user          = config['ROOTFS']['USER']
     new_user_password = config['ROOTFS']['PASSWORD']
-    new_user_is_admin = config['ROOTFS']['USER_IS_ADMIN']
+    new_user_is_admin = True if config['ROOTFS']['USER_IS_ADMIN'] == 'yes' else False
   except:
     pass
   
   try:
     interface   = config['NETWORK']['INTERFACE']
-    use_dhcp    = config['NETWORK']['USE_DHCP']
+    use_dhcp    = True if config['NETWORK']['USE_DHCP'] == 'yes' else False
     address     = config['NETWORK']['ADDRESS']
     netmask     = config['NETWORK']['NETMASK']
     gateway     = config['NETWORK']['GATEWAY']
@@ -158,7 +162,7 @@ def prepare():
     exit(1)
 
   curpath = os.getcwd()
-  directories = ["tmp", "rootfs", "boot"]
+  directories = ["tmp", "rootfs", "boot", "dist"]
   for directory in directories:
     try:
       os.mkdir(os.path.join(curpath, directory))
@@ -203,6 +207,7 @@ def setup_rootfs():
 
 def setup_network():
   global INTERFACES
+  print("Configuring interfaces")
   INTERFACES += ("auto lo \n"
                  "iface lo inet loopback \n")
   if use_dhcp == "yes":
@@ -219,7 +224,17 @@ def setup_network():
                                                              netmask=netmask,
                                                              gateway=gateway,
                                                              dns_servers=dns_servers))
-  
+
+def pack():
+    from datetime import datetime
+    timestamp = datetime.now().strftime("_%Y_%m_%d_%H_%M") if append_timest else ''
+    boot_pack_path = "dist/" + name + "_boot" + timestamp + ".tar.gz"
+    rootfs_pack_path = "dist/" + name + "_rootfs" + timestamp + ".tar.gz"
+    print("Packing %s, please wait" % boot_pack_path) 
+    ret = subprocess.call(["sudo", "tar", "cfz", boot_pack_path, "boot"])
+    print("Packing %s, please wait" % rootfs_pack_path)
+    ret = subprocess.call(["sudo", "tar", "cfz", rootfs_pack_path, "rootfs"])
+    
 
 if __name__ == "__main__":
   check_args()
@@ -227,6 +242,6 @@ if __name__ == "__main__":
   if args.mode == "prepare": prepare()
   if args.mode == "install_boot": print("Not implemented yet!")
   if args.mode == "install_rootfs": print("Not implemented yet!")
-  if args.mode == "pack": print("Not implemented yet!")
+  if args.mode == "pack": pack()
   
   

@@ -1,6 +1,6 @@
 # Distro version, chooose from precise, quantal
 [PROJECT]
-name = "mku_rootfs"
+name = demo
 append_timestamp = yes
 
 [ROOTFS]
@@ -10,7 +10,7 @@ RUNTIME_DEPS  =
 ROOT_PASSWORD =
 # USER          = tmpuser
 # PASSWORD      = tmppwd
-# USER_IS_ADMIN = yes
+# USER_IS_ADMIN = no
 
 [NETWORK]
 INTERFACE   = eth0
