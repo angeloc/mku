@@ -22,6 +22,9 @@ Install
 
 `echo "PATH=$PATH:~/mku" >> ~/.bashrc`
 
+How to use
+----------
+
 * Create a folder for the new rootfs like `mkurootfs`
 
 * Copy `project-sample.mku` to `mkurootfs/project.mku`
@@ -40,5 +43,14 @@ Install
 
 * If you want you can `pack` your boot and rootfs with:
 `mku pack`
-they will be packed in `dist` folder.
+they will be packed in `dist` folder in tar.gz format.
+
+Development support
+-------------------
+
+With MKU you can also prepare a kernel development environment. MKU knows your board so it can download and set up a properly configured environment for your kernel development needs.
+
+You can prepare your kernel development environment with:
+
+`mku prepare_kernel`
 
