@@ -92,12 +92,15 @@ def board_prepare(os_version):
 
 def prepare_kernel_devenv():
   import os
+  DEPS = ["git", "arm-linux-gnueabihf-gcc", "arm-linux-gnueabi-gcc"]
+  DEPS_PACKAGES = ["git", "gcc-arm-linux-gnueabi", "gcc-arm-linux-gnueabihf"]
   try:
-    output = subprocess.check_output(["which" , "git"])
+    for dep in DEPS:
+      output = subprocess.check_output(["which" , dep])
   except:
     print("""
-    Git not installed, you can install it with:
-    sudo apt-get install git""")
+    Missing dependencies, you can install them with:
+    sudo apt-get install %s""" % " ".join(DEPS_PACKAGES))
     exit(1)
   print("This process may take a while, please wait ...")
   ret = subprocess.call(["git", "clone", "git://github.com/beagleboard/kernel.git"])

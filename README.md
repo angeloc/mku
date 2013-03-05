@@ -16,11 +16,11 @@ Install
 
 * Clone the repository:
   
-`git clone https://github.com/angeloc/mku.git`
+		git clone https://github.com/angeloc/mku.git
 
 * Append the folder you cloned to the $PATH in bashrc:
 
-`echo "PATH=$PATH:~/mku" >> ~/.bashrc`
+		echo "PATH=$PATH:~/mku" >> ~/.bashrc
 
 How to use
 ----------
@@ -33,7 +33,7 @@ How to use
 
 * Enter the folder and prepare the environment with:
 
-`mku prepare`
+		mku prepare
 
 * Please wait until it completes, it may take a while due to file downloading.
 
@@ -42,8 +42,9 @@ How to use
 * Your rootfs is now done. To use it, copy boot folder and rootfs folder to your embedded board. Generally it's simply a matter of copy these two folders into the corrispectively folders inside a microsd card.
 
 * If you want you can `pack` your boot and rootfs with:
-`mku pack`
-they will be packed in `dist` folder in tar.gz format.
+
+		mku pack
+	they will be packed in `dist` folder in tar.gz format.
 
 Development support
 -------------------
@@ -52,5 +53,5 @@ With MKU you can also prepare a kernel development environment. MKU knows your b
 
 You can prepare your kernel development environment with:
 
-`mku prepare_kernel`
+	mku prepare_kernel
 
