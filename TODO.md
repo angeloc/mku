@@ -3,7 +3,7 @@ Update check
 
 Links from which system parts are downloaded changes often, so we should keep ours updated to. Updating links means updating also MKU, so users should have the opportunity to check if their software is updated.
 
-We could relay on git for the first time, the we could switch to something tagged.
+We could relay on git for the first time, then we could switch to something tagged.
 
 To check for updates, MKU should get the revision form filesystem and compare to the repo's one. If it's different, should prompt the user for the update. The update should be a simple:
 
