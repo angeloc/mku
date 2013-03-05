@@ -1,7 +1,7 @@
 Update check
 ------------
 
-Links from which download system parts are updated often, so we should keep ours updated to. Updating links means updating also MKU, so the user should have the opportunity to check if it's software is updated.
+Links from which system parts are downloaded changes often, so we should keep ours updated to. Updating links means updating also MKU, so the user should have the opportunity to check if it's software is updated.
 
 We could relay on git for the first time, the we could switch to something tagged.
 
