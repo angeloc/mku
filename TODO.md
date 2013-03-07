@@ -22,3 +22,8 @@ IGEP support
 * kernel and module should be used as described [here](http://labs.isee.biz/index.php/How_to_boot_from_MicroSD_Card#Install_the_kernel_modules) using modules and kernel files previously downloaded.
 
 * latest kernel sources are [here](http://downloads.isee.biz/pub/releases/linux_kernel/v2.6.37-5/linux-omap-2.6.37-5.tar.gz)
+
+PANDABOARD support
+------------------
+
+All informations [here](http://www.omappedia.com/wiki/OMAP_Ubuntu_Core)
