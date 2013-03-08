@@ -78,7 +78,7 @@ def check_args():
   
   parser.add_argument("mode", 
     help = '''prepare  :  prepares the environment, makes folders, downloads software''',
-    choices=['prepare', 'prepare_kernel', 'pack'])
+    choices=['list','prepare', 'prepare_kernel', 'pack'])
   
   global args
   args = parser.parse_args()
@@ -243,10 +243,19 @@ def pack():
 
 def prepare_kernel_devenv():
   boardlib.prepare_kernel_devenv()
-    
+
+def list_boards():
+  print("\nCurrently supported boards:\n")
+  
+  for board in os.listdir(BOARD_CONFIGS_PATH):
+    if ".py" in board:
+      print(board[:-3])
+  
+  print("\n")
 
 if __name__ == "__main__":
   check_args()
+  if args.mode == "list": list_boards()
   get_configuration()
   if args.mode == "prepare": prepare()
   if args.mode == "prepare_kernel": prepare_kernel_devenv()
