@@ -6,6 +6,7 @@ append_timestamp = yes
 [ROOTFS]
 VERSION       = precise
 BOARD         = beaglebone
+UPDATE        = no
 RUNTIME_DEPS  = 
 ROOT_PASSWORD =
 # USER          = tmpuser

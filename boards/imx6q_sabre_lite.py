@@ -16,11 +16,106 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import random
 
-UBOOTSCRIPT_URL = "http://commondatastorage.googleapis.com/boundarydevices.com/6x_bootscript-20121110"
-PRECISE_KERNEL_URL = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/linux-image-3.8.2-imx4_1.0precise_armhf.deb"
-QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/linux-image-3.8.2-imx4_1.0quantal_armhf.deb"
-DTBS_URL = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/3.8.2-imx4-dtbs.tar.gz"
+UENV = """initrd_high=0xffffffff
+fdt_high=0xffffffff
+dtb_file=imx6q-sabrelite.dtb
+ 
+console=ttymxc1,115200
+ 
+mmcroot=/dev/mmcblk0p2 ro
+mmcrootfstype=ext4 rootwait fixrtc
+ 
+mmc_load_image=${fs}load mmc ${disk}:1 0x10000000 uImage
+mmc_load_initrd=${fs}load mmc ${disk}:1 0x12000000 uInitrd; setenv initrd_size ${filesize}
+mmc_load_dtb=${fs}load mmc ${disk}:1 0x11ff0000 ${dtb_file}
+ 
+mmcargs=setenv bootargs $bootargs fec.macaddr=0x00,0x04,0x9f,0x%02x,0x%02x,0x%02x console=${console} root=${mmcroot} rootfstype=${mmcrootfstype} ${video}
+ 
+#Just: zImage
+#xyz_mmcboot=run mmc_load_image; run mmc_load_dtb; echo Booting from mmc ...
+#loaduimage=run xyz_mmcboot; run mmcargs; bootz 0x10000000 - 0x11ff0000
+ 
+#zImage and initrd
+xyz_mmcboot=run mmc_load_image; run mmc_load_initrd; run mmc_load_dtb; echo Booting from mmc ...
+loaduimage=run xyz_mmcboot; run mmcargs; bootm 0x10000000 0x12000000:${initrd_size} 0x11ff0000
+""" % (random.randint(1,254), random.randint(1,254), random.randint(1,254))
+
+BOOTCMD="""setenv bootargs
+setenv nextcon 0;
+
+if hdmidet ; then
+	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=hdmi,1024x768M@60
+	setenv fbmem "fbmem=28M";
+	setexpr nextcon $nextcon + 1
+else
+	echo "------ no HDMI monitor";
+fi
+
+i2c dev 2
+if i2c probe 0x04 ; then
+	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=ldb,LDB-XGA,if=RGB666
+	if test "0" -eq $nextcon; then
+		setenv fbmem "fbmem=10M";
+	else
+		setenv fbmem ${fbmem},10M
+	fi
+	setexpr nextcon $nextcon + 1
+else
+	echo "------ no Freescale display";
+fi
+
+if i2c probe 0x38 ; then
+	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=ldb,1024x600M@60,if=RGB666
+	if test "0" -eq $nextcon; then
+		setenv fbmem "fbmem=10M";
+	else
+		setenv fbmem ${fbmem},10M
+	fi
+	setexpr nextcon $nextcon + 1
+else
+	echo "------ no 1024x600 display";
+fi
+
+if i2c probe 0x48 ; then
+	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=lcd,CLAA-WVGA,if=RGB666
+	if test "0" -eq $nextcon; then
+		setenv fbmem "fbmem=10M";
+	else
+		setenv fbmem ${fbmem},10M
+	fi
+	setexpr nextcon $nextcon + 1
+else
+	echo "------ no 800x480 display";
+fi
+
+while test "3" -ne $nextcon ; do
+	setenv bootargs $bootargs video=mxcfb${nextcon}:off ;
+	setexpr nextcon $nextcon + 1 ;
+done
+
+setenv bootargs $bootargs $fbmem
+
+${fs}load mmc ${disk}:1 ${loadaddr} uEnv.txt
+env import -t ${loadaddr} ${filesize}
+run loaduimage
+"""
+
+CONSOLE="""
+start on stopped rc RUNLEVEL=[2345]
+stop on runlevel [!2345]
+ 
+respawn
+exec /sbin/getty 115200 ttymxc1
+"""
+
+PRECISE_KERNEL_URL    = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/linux-image-3.8.2-imx4_1.0precise_armhf.deb"
+QUANTAL_KERNEL_URL    = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/linux-image-3.8.2-imx4_1.0quantal_armhf.deb"
+PRECISE_FIRMWARE_URL  = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/linux-firmware-image_1.0precise_all.deb"
+QUANTAL_FIRMWARE_URL  = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/linux-firmware-image_1.0quantal_all.deb"
+PRECISE_DTBS_URL      = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/3.8.2-imx4-dtbs.tar.gz"
+QUANTAL_DTBS_URL      = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/3.8.2-imx4-dtbs.tar.gz"
 PRECISE_KERNEL_SUFFIX = "-3.8.2-imx4"
 QUANTAL_KERNEL_SUFFIX = "-3.8.2-imx4"
 
@@ -30,12 +125,8 @@ import os
 def board_prepare(os_version):
   KERNEL_URL    = eval(os_version + "_KERNEL_URL")
   KERNEL_SUFFIX = eval(os_version + "_KERNEL_SUFFIX")
-  
-  #Getting bootscript
-  ubootscript_path = os.path.join(os.getcwd(), "tmp", "6x_bootscript")
-  print(ubootscript_path)
-  print(UBOOTSCRIPT_URL)
-  ret = subprocess.call(["curl" , "-#", "-o", ubootscript_path, "-C", "-", UBOOTSCRIPT_URL])
+  FIRMWARE_URL  = eval(os_version + "_FIRMWARE_URL")
+  DTBS_URL      = eval(os_version + "_DTBS_URL")
   
   #Getting KERNEL
   kernel_name = os_version + KERNEL_SUFFIX + "-kernel.deb"
@@ -43,21 +134,59 @@ def board_prepare(os_version):
   print(KERNEL_URL)
   ret = subprocess.call(["curl" , "-#", "-o", kernel_path, "-C", "-", KERNEL_URL])
   
-  #Copy bootscript
-  ret = subprocess.call(["cp", "-v", "tmp/6x_bootscript" , "boot/6x_bootscript"])
+  #Getting FIRMWARE
+  firmware_name = os_version + KERNEL_SUFFIX + "-firmware.deb"
+  firmware_path = os.path.join(os.getcwd(), "tmp", firmware_name)
+  print(FIRMWARE_URL)
+  ret = subprocess.call(["curl" , "-#", "-o", firmware_path, "-C", "-", FIRMWARE_URL])
   
-  #installing kernel
+  #Getting DTB
+  dtbs_name = os_version + KERNEL_SUFFIX + "-dtbs.tar.gz"
+  dtbs_path = os.path.join(os.getcwd(), "tmp", dtbs_name)
+  print(DTBS_URL)
+  ret = subprocess.call(["curl" , "-#", "-o", dtbs_path, "-C", "-", DTBS_URL])
+  ret = subprocess.call(["tar", "zxf", dtbs_path, "-C", "boot/"])
+  
+  #Setting up bootscript
+  bootcmd_path = os.path.join(os.getcwd(), "tmp", "boot.cmd")
+  bootcmd = open(bootcmd_path,"w")
+  bootcmd.write(BOOTCMD)
+  bootcmd.close()
+  ret = subprocess.call(["mkimage", "-A", "arm", "-O", "linux", "-T", 
+                          "script", "-C", "none", "-a", "0", "-e", "0",
+                          "-n", '"bootscript"', "-d", "tmp/boot.cmd" , "boot/6x_bootscript"])
+                          
+  #Setting up uEnv.txt
+  uenv_path = os.path.join(os.getcwd(), "boot", "uEnv.txt")
+  uenv = open(uenv_path,"w")
+  uenv.write(UENV)
+  uenv.close()
+  
+  #Setting up console
+  console_path = os.path.join(os.getcwd(), "tmp", "console.conf")
+  console = open(console_path,"w")
+  console.write(CONSOLE)
+  console.close()
+  ret = subprocess.call(["sudo", "cp" , console_path, "rootfs/etc/init/"])
+  
+  #installing kernel and firmware
   ret = subprocess.call(["cp" , kernel_path, "rootfs/tmp"])
+  ret = subprocess.call(["cp" , firmware_path, "rootfs/tmp"])
   rootfs_path = os.path.join(os.getcwd(), "rootfs")
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + kernel_name])
+  ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + firmware_name])
   ret = subprocess.call(["cp", "-v", "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
   ret = subprocess.call(["cp", "-v", "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
   ret = subprocess.call(["mkimage", "-A", "arm", "-O", "linux", 
                           "-T", "kernel", "-C", "none", "-a", "0x10008000", "-e", "0x10008000",
                           "-n", '"Linux"', "-d", "boot/zImage", "boot/uImage"])
+  ret = subprocess.call(["mkimage", "-A", "arm", "-O", "linux", "-a", "0", "-e", "0",
+                          "-T", "ramdisk", "-C", "none",
+                          "-n", '"Ramdisk"', "-d", "boot/initrd.img", "boot/uInitrd"])
   
   #cleaning
-  ret = subprocess.call(["rm", "boot/zImage"])
+  #ret = subprocess.call(["rm", "boot/zImage"])
+  #ret = subprocess.call(["rm", "boot/initrd.img"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "/tmp/" + kernel_name])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "-rf", "/boot/"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "mkdir", "/boot/"])
@@ -74,9 +203,5 @@ def prepare_kernel_devenv():
     Missing dependencies, you can install them with:
     sudo apt-get install %s""" % " ".join(DEPS_PACKAGES))
     exit(1)
-  print("This process may take a while, please wait ...")
-  ret = subprocess.call(["git", "clone", "git://github.com/beagleboard/kernel.git"])
-  os.chdir("kernel")
-  ret = subprocess.call(["git", "checkout", "origin/beaglebone-3.2", "-b", "beaglebone-3.2"])
-  ret = subprocess.call(["./patch.sh"])
-  print("Done!")
+  print("Not implemented yet!")
+  exit(1)

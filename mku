@@ -50,8 +50,10 @@ netmask           = None
 address           = None
 dns_servers       = None
 boardlib          = None
+update            = None
 
 rootfs_path = os.path.join(os.getcwd(), "rootfs")
+boot_path = os.path.join(os.getcwd(), "boot")
 
 INTERFACES = ""
 SETUP_SCRIPT = """
@@ -66,8 +68,9 @@ echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 sed -i "/^# deb .*universe/ s/^# //" /etc/apt/sources.list
 sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
-apt-get update
-apt-get -y install {runtime_deps}
+{update} && apt-get update
+{update} && apt-get -y install {runtime_deps}
+{update} && apt-get -f -y --force-yes install
 apt-get clean
 """
 
@@ -78,7 +81,11 @@ def check_args():
   
   parser.add_argument("mode", 
     help = '''prepare  :  prepares the environment, makes folders, downloads software''',
-    choices=['list','prepare', 'prepare_kernel', 'pack'])
+    choices=['list','prepare', 'prepare_kernel', 'pack', "install_boot", "install_rootfs"])
+  
+  parser.add_argument("-d", "--destination",
+    help = "Destination folder, works for install_boot install_rootfs commands",
+    dest='destination')
   
   global args
   args = parser.parse_args()
@@ -101,6 +108,7 @@ def get_configuration():
   global netmask    
   global gateway    
   global dns_servers
+  global update
   
   global boardlib
   
@@ -130,6 +138,7 @@ def get_configuration():
     new_user          = config['ROOTFS']['USER']
     new_user_password = config['ROOTFS']['PASSWORD']
     new_user_is_admin = True if config['ROOTFS']['USER_IS_ADMIN'] == 'yes' else False
+    update            = True if config['ROOTFS']['UPDATE'] == 'yes' else False
   except:
     pass
   
@@ -204,17 +213,20 @@ def setup_rootfs():
                                       new_user=new_user,
                                       new_user_password=new_user_password,
                                       is_admin = '-G adm,sudo' if new_user_is_admin else '',
-                                      interfaces=INTERFACES)
+                                      interfaces=INTERFACES,
+                                      update = 'true' if (runtime_deps or update) else 'false')
   setup_script_file.write(setup_script)
   setup_script_file.close()
+  ret = subprocess.call(["sudo", "mount", "-t", "proc", "proc", "rootfs/proc"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "/bin/sh", "tmp/setup_script.sh"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "tmp/setup_script.sh"])
+  ret = subprocess.call(["sudo", "umount", "rootfs/proc"])
 
 def setup_network():
   global INTERFACES
   print("Configuring interfaces")
   INTERFACES += ("auto lo \n"
-                 "iface lo inet loopback \n")
+                 "iface lo inet loopback \n\n")
   if use_dhcp == "yes":
       INTERFACES +=  ("auto {interface} \n"
                      "iface {interface} inet dhcp \n".format(interface=interface))
@@ -253,14 +265,26 @@ def list_boards():
   
   print("\n")
 
+def install_boot(destination):
+  ret = subprocess.call(" ".join(["sudo", "cp", "-uav", "boot/*", destination]), shell=True)
+
+def install_rootfs(destination):
+  ret = subprocess.call(" ".join(["sudo", "cp", "-uav", "rootfs/*", destination]), shell=True)
+
 if __name__ == "__main__":
   check_args()
   if args.mode == "list": list_boards()
   get_configuration()
   if args.mode == "prepare": prepare()
   if args.mode == "prepare_kernel": prepare_kernel_devenv()
-  if args.mode == "install_boot": print("Not implemented yet!")
-  if args.mode == "install_rootfs": print("Not implemented yet!")
+  if args.mode == "install_boot":
+    if not args.destination:
+      print ("Please specify a destination directory")
+    install_boot(args.destination)
+  if args.mode == "install_rootfs":
+    if not args.destination:
+      print ("Please specify a destination directory")
+    install_rootfs(args.destination)
   if args.mode == "pack": pack()
   
   
