@@ -31,11 +31,11 @@ mmc_load_image=${fs}load mmc ${disk}:1 0x10000000 uImage
 mmc_load_initrd=${fs}load mmc ${disk}:1 0x12000000 uInitrd; setenv initrd_size ${filesize}
 mmc_load_dtb=${fs}load mmc ${disk}:1 0x11ff0000 ${dtb_file}
  
-mmcargs=setenv bootargs $bootargs vmalloc=400M fec.macaddr=0x00,0x04,0x9f,0x11,0x22,0x33 console=${console} root=${mmcroot} rootfstype=${mmcrootfstype} consoleblank=0
+mmcargs=setenv bootargs $bootargs fec.macaddr=0x00,0x04,0x9f,0x11,0x22,0x33 console=${console} root=${mmcroot} rootfstype=${mmcrootfstype} consoleblank=0
  
 #Just: uImage
 #xyz_mmcboot=run mmc_load_image; run mmc_load_dtb; echo Booting from mmc ...
-#loaduimage=run xyz_mmcboot; run mmcargs; bootz 0x10000000 - 0x11ff0000
+#loaduimage=run xyz_mmcboot; run mmcargs; bootm 0x10000000 - 0x11ff0000
  
 #uImage and initrd
 xyz_mmcboot=run mmc_load_image; run mmc_load_initrd; run mmc_load_dtb; echo Booting from mmc ...
@@ -46,7 +46,7 @@ BOOTCMD="""setenv bootargs
 setenv nextcon 0;
 
 if hdmidet ; then
-	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=hdmi,1280x1024M@60,if=RGB24
+	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=hdmi,1024x768M@60,if=RGB24
 	setenv fbmem "fbmem=28M";
 	setexpr nextcon $nextcon + 1
 else
@@ -95,7 +95,7 @@ while test "3" -ne $nextcon ; do
 	setexpr nextcon $nextcon + 1 ;
 done
 
-setenv bootargs $bootargs $fbmem
+setenv bootargs $bootargs $fbmem ;
 
 ${fs}load mmc ${disk}:1 ${loadaddr} uEnv.txt
 env import -t ${loadaddr} ${filesize}
