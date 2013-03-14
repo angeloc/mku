@@ -65,6 +65,8 @@ locale-gen en_US.UTF-8
 
 echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 sed -i "/^# deb .*universe/ s/^# //" /etc/apt/sources.list
 sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
@@ -72,6 +74,12 @@ sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
 {update} && apt-get -y install {runtime_deps}
 {update} && apt-get -f -y --force-yes install
 apt-get clean
+
+echo "Cleaning rootfs ..."
+rm -rf /usr/share/doc/
+rm -rf /usr/share/doc-base/
+dpkg --purge man-db manpages
+rm -rf /usr/share/man/
 """
 
 sys.path.append(BOARD_CONFIGS_PATH)

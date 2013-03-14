@@ -31,22 +31,22 @@ mmc_load_image=${fs}load mmc ${disk}:1 0x10000000 uImage
 mmc_load_initrd=${fs}load mmc ${disk}:1 0x12000000 uInitrd; setenv initrd_size ${filesize}
 mmc_load_dtb=${fs}load mmc ${disk}:1 0x11ff0000 ${dtb_file}
  
-mmcargs=setenv bootargs $bootargs fec.macaddr=0x00,0x04,0x9f,0x%02x,0x%02x,0x%02x console=${console} root=${mmcroot} rootfstype=${mmcrootfstype} ${video}
+mmcargs=setenv bootargs $bootargs vmalloc=400M fec.macaddr=0x00,0x04,0x9f,0x11,0x22,0x33 console=${console} root=${mmcroot} rootfstype=${mmcrootfstype} consoleblank=0
  
-#Just: zImage
+#Just: uImage
 #xyz_mmcboot=run mmc_load_image; run mmc_load_dtb; echo Booting from mmc ...
 #loaduimage=run xyz_mmcboot; run mmcargs; bootz 0x10000000 - 0x11ff0000
  
-#zImage and initrd
+#uImage and initrd
 xyz_mmcboot=run mmc_load_image; run mmc_load_initrd; run mmc_load_dtb; echo Booting from mmc ...
 loaduimage=run xyz_mmcboot; run mmcargs; bootm 0x10000000 0x12000000:${initrd_size} 0x11ff0000
-""" % (random.randint(1,254), random.randint(1,254), random.randint(1,254))
+"""
 
 BOOTCMD="""setenv bootargs
 setenv nextcon 0;
 
 if hdmidet ; then
-	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=hdmi,1024x768M@60
+	setenv bootargs $bootargs video=mxcfb${nextcon}:dev=hdmi,1280x1024M@60,if=RGB24
 	setenv fbmem "fbmem=28M";
 	setexpr nextcon $nextcon + 1
 else
@@ -110,14 +110,14 @@ respawn
 exec /sbin/getty 115200 ttymxc1
 """
 
-PRECISE_KERNEL_URL    = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/linux-image-3.8.2-imx4_1.0precise_armhf.deb"
-QUANTAL_KERNEL_URL    = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/linux-image-3.8.2-imx4_1.0quantal_armhf.deb"
-PRECISE_FIRMWARE_URL  = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/linux-firmware-image_1.0precise_all.deb"
-QUANTAL_FIRMWARE_URL  = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/linux-firmware-image_1.0quantal_all.deb"
-PRECISE_DTBS_URL      = "http://rcn-ee.net/deb/precise-armhf/v3.8.2-imx4/3.8.2-imx4-dtbs.tar.gz"
-QUANTAL_DTBS_URL      = "http://rcn-ee.net/deb/quantal-armhf/v3.8.2-imx4/3.8.2-imx4-dtbs.tar.gz"
-PRECISE_KERNEL_SUFFIX = "-3.8.2-imx4"
-QUANTAL_KERNEL_SUFFIX = "-3.8.2-imx4"
+PRECISE_KERNEL_URL    = "http://rcn-ee.net/deb/precise-armhf/v3.7.5-imx6/linux-image-3.7.5-imx6_1.0precise_armhf.deb"
+QUANTAL_KERNEL_URL    = "http://rcn-ee.net/deb/quantal-armhf/v3.7.5-imx6/linux-image-3.7.5-imx6_1.0quantal_armhf.deb"
+PRECISE_FIRMWARE_URL  = "http://rcn-ee.net/deb/precise-armhf/v3.7.5-imx6/linux-firmware-image_1.0precise_armhf.deb"
+QUANTAL_FIRMWARE_URL  = "http://rcn-ee.net/deb/quantal-armhf/v3.7.5-imx6/linux-firmware-image_1.0quantal_all.deb"
+PRECISE_DTBS_URL      = "http://rcn-ee.net/deb/precise-armhf/v3.7.5-imx6/3.7.5-imx6-dtbs.tar.gz"
+QUANTAL_DTBS_URL      = "http://rcn-ee.net/deb/quantal-armhf/v3.7.5-imx6/3.7.5-imx6-dtbs.tar.gz"
+PRECISE_KERNEL_SUFFIX = "-3.7.5-imx6"
+QUANTAL_KERNEL_SUFFIX = "-3.7.5-imx6"
 
 import subprocess
 import os
@@ -145,7 +145,8 @@ def board_prepare(os_version):
   dtbs_path = os.path.join(os.getcwd(), "tmp", dtbs_name)
   print(DTBS_URL)
   ret = subprocess.call(["curl" , "-#", "-o", dtbs_path, "-C", "-", DTBS_URL])
-  ret = subprocess.call(["tar", "zxf", dtbs_path, "-C", "boot/"])
+  ret = subprocess.call(["tar", "zxf", dtbs_path, "-C", "tmp/"])
+  ret = subprocess.call(["sudo", "cp" , dtbs_path, "boot/"])
   
   #Setting up bootscript
   bootcmd_path = os.path.join(os.getcwd(), "tmp", "boot.cmd")
