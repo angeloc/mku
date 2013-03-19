@@ -16,44 +16,67 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-UENV = """kernel_file=zImage
-initrd_file=initrd.img
-
-console=ttyO0,115200n8
-
+UENV = """
+console=ttyO2,115200n8
+ 
+#Camera: Uncomment to enable:
+#http://shop.leopardimaging.com/product.sc?productId=17
+#camera=li5m03
+ 
+#SPI: enable for userspace spi access on expansion header
+#buddy=spidev
+ 
+#LSR COM6L Adapter Board
+#http://eewiki.net/display/linuxonarm/LSR+COM6L+Adapter+Board
+#First production run has unprogramed eeprom:
+#buddy=lsr-com6l-adpt
+ 
+#LSR COM6L Adapter Board + TiWi5
+#wl12xx_clk=wl12xx_26mhz
+ 
+#These are now set by default: uncomment/change if you need something else
+vram=16MB
+#defaultdisplay=dvi
+#dvimode=1280x720MR-16@60
+ 
 mmcroot=/dev/mmcblk0p2 ro
 mmcrootfstype=ext4 rootwait fixrtc
-
-boot_fstype=fat
-xyz_load_image=${boot_fstype}load mmc 0:1 0x80300000 ${kernel_file}
-xyz_load_initrd=${boot_fstype}load mmc 0:1 0x81600000 ${initrd_file}; setenv initrd_size ${filesize}
-xyz_load_dtb=${boot_fstype}load mmc 0:1 0x815f0000 /dtbs/${dtb_file}
-
-xyz_mmcboot=run xyz_load_image; run xyz_load_initrd; echo Booting from mmc ...
-
-video_args=setenv video 
-device_args=run video_args; run expansion_args; run mmcargs
-mmcargs=setenv bootargs console=${console} ${optargs} ${video} root=${mmcroot} rootfstype=${mmcrootfstype} ${expansion}
-
-optargs=
-expansion_args=setenv expansion ip=${ip_method}
-loaduimage=run xyz_mmcboot; run device_args; bootz 0x80300000 0x81600000:${initrd_size}
-"""
+ 
+optargs=console=tty0
+ 
+mmc_load_image=fatload mmc 0:1 0x80300000 zImage
+mmc_load_initrd=fatload mmc 0:1 0x81600000 initrd.img; setenv initrd_size ${filesize}
+mmc_load_dtb=fatload mmc 0:1 0x815f0000 /dtbs/${dtb_file}
+ 
+deviceargs=setenv device_args buddy=${buddy} buddy2=${buddy2} wl12xx_clk=${wl12xx_clk}
+mmcargs=setenv bootargs console=${console} ${optargs} vram=${vram} omapfb.mode=${defaultdisplay}:${dvimode} omapdss.def_disp=${defaultdisplay} root=${mmcroot} rootfstype=${mmcrootfstype} ${device_args}
+ 
+#Just: zImage
+xyz_mmcboot=run mmc_load_image; echo Booting from mmc ...
+loaduimage=run xyz_mmcboot; run deviceargs; run mmcargs; bootz 0x80300000
+ 
+#zImage and initrd
+#xyz_mmcboot=run mmc_load_image; run mmc_load_initrd; echo Booting from mmc ...
+#loaduimage=run xyz_mmcboot; run deviceargs; run mmcargs; bootz 0x80300000 0x81600000:${initrd_size}"""
 
 CONSOLE="""
 start on stopped rc RUNLEVEL=[2345]
 stop on runlevel [!2345]
  
 respawn
-exec /sbin/getty 115200 ttyO0
+exec /sbin/getty 115200 ttyO2
 """
 
-MLO_URL = "http://rcn-ee.net/deb/tools/beaglebone/MLO-beaglebone-v2013.01.01-r1"
-UBOOT_URL = "http://rcn-ee.net/deb/tools/beaglebone/u-boot-beaglebone-v2013.01.01-r1.img"
-PRECISE_KERNEL_URL = "http://rcn-ee.net/deb/precise-armhf/v3.2.33-psp26/linux-image-3.2.33-psp26_1.0precise_armhf.deb"
-QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.2.33-psp26/linux-image-3.2.33-psp26_1.0quantal_armhf.deb"
-PRECISE_KERNEL_SUFFIX = "-3.2.33-psp26"
-QUANTAL_KERNEL_SUFFIX = "-3.2.33-psp26"
+MLO_URL = "http://rcn-ee.net/deb/tools/beagleboard/MLO-beagleboard-v2013.01.01-r1"
+UBOOT_URL = "http://rcn-ee.net/deb/tools/beagleboard/u-boot-beagleboard-v2013.01.01-r1.img"
+PRECISE_KERNEL_URL = "http://rcn-ee.net/deb/precise-armhf/v3.7.10-x9/linux-image-3.7.10-x9_1.0precise_armhf.deb"
+QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.7.10-x9/linux-image-3.7.10-x9_1.0quantal_armhf.deb"
+PRECISE_DTBS_URL      = "http://rcn-ee.net/deb/precise-armhf/v3.7.10-x9/3.7.10-x9-dtbs.tar.gz"
+QUANTAL_DTBS_URL      = "http://rcn-ee.net/deb/quantal-armhf/v3.7.10-x9/3.7.10-x9-dtbs.tar.gz"
+PRECISE_FIRMWARE_URL  = "http://rcn-ee.net/deb/precise-armhf/v3.7.10-x9/linux-firmware-image_1.0precise_all.deb"
+QUANTAL_FIRMWARE_URL  = "http://rcn-ee.net/deb/quantal-armhf/v3.7.10-x9/linux-firmware-image_1.0quantal_all.deb"
+PRECISE_KERNEL_SUFFIX = "-3.7.10-x9"
+QUANTAL_KERNEL_SUFFIX = "-3.7.10-x9"
 
 import subprocess
 import os
@@ -61,6 +84,8 @@ import os
 def board_prepare():
   KERNEL_URL    = eval(os_version + "_KERNEL_URL")
   KERNEL_SUFFIX = eval(os_version + "_KERNEL_SUFFIX")
+  FIRMWARE_URL  = eval(os_version + "_FIRMWARE_URL")
+  DTBS_URL      = eval(os_version + "_DTBS_URL")
   
   #Getting MLO
   mlo_path = os.path.join(os.getcwd(), "tmp", "MLO")
@@ -77,6 +102,20 @@ def board_prepare():
   kernel_path = os.path.join(os.getcwd(), "tmp", kernel_name)
   print(KERNEL_URL)
   ret = subprocess.call(["curl" , "-#", "-o", kernel_path, "-C", "-", KERNEL_URL])
+  
+  #Getting FIRMWARE
+  firmware_name = os_version + KERNEL_SUFFIX + "-firmware.deb"
+  firmware_path = os.path.join(os.getcwd(), "tmp", firmware_name)
+  print(FIRMWARE_URL)
+  ret = subprocess.call(["curl" , "-#", "-o", firmware_path, "-C", "-", FIRMWARE_URL])
+  
+  #Getting DTB
+  dtbs_name = os_version + KERNEL_SUFFIX + "-dtbs.tar.gz"
+  dtbs_path = os.path.join(os.getcwd(), "tmp", dtbs_name)
+  print(DTBS_URL)
+  ret = subprocess.call(["curl" , "-#", "-o", dtbs_path, "-C", "-", DTBS_URL])
+  ret = subprocess.call(["tar", "zxf", dtbs_path, "-C", "tmp/"])
+  ret = subprocess.call(["sudo", "cp" , dtbs_path, "boot/"])
   
   #Setting up uEnv.txt
   ret = subprocess.call(["cp", "-v", mlo_path, "boot"])
@@ -97,6 +136,7 @@ def board_prepare():
   ret = subprocess.call(["cp" , kernel_path, "rootfs/tmp"])
   rootfs_path = os.path.join(os.getcwd(), "rootfs")
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + kernel_name])
+  ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + firmware_name])
   ret = subprocess.call(["cp" , "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
   ret = subprocess.call(["cp" , "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
   
@@ -120,6 +160,6 @@ def prepare_kernel_devenv():
   print("This process may take a while, please wait ...")
   ret = subprocess.call(["git", "clone", "git://github.com/beagleboard/kernel.git"])
   os.chdir("kernel")
-  ret = subprocess.call(["git", "checkout", "origin/beaglebone-3.2", "-b", "beaglebone-3.2"])
+  ret = subprocess.call(["git", "checkout", "origin/beagleboard-3.6", "-b", "beagleboard-3.6"])
   ret = subprocess.call(["./patch.sh"])
   print("Done!")
