@@ -55,7 +55,7 @@ You can prepare your kernel development environment with:
 
 	mku prepare_kernel
 
-Acknoledgements
+Acknowledgments
 ---------------
 
 Many thanks to Robert Nelson (http://www.rcn-ee.com/) for keep running his wonderful infrastructure on which some parts of this software are based.

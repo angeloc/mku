@@ -50,7 +50,7 @@ QUANTAL_KERNEL_SUFFIX = "-3.2.33-psp26"
 import subprocess
 import os
 
-def board_prepare(os_version):
+def board_prepare():
   KERNEL_URL    = eval(os_version + "_KERNEL_URL")
   KERNEL_SUFFIX = eval(os_version + "_KERNEL_SUFFIX")
   

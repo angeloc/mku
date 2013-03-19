@@ -140,6 +140,8 @@ def get_configuration():
     exit(1)
   
   boardlib = importlib.import_module(board_script)
+  boardlib.BOARD_CONFIGS_PATH = BOARD_CONFIGS_PATH
+  boardlib.os_version = os_version
   
   try:
     new_user          = config['ROOTFS']['USER']
@@ -208,7 +210,7 @@ def setup_core():
   return ret
 
 def setup_board():
-  boardlib.board_prepare(os_version)
+  boardlib.board_prepare()
 
 def setup_rootfs():
   setup_script_path = os.path.join(os.getcwd(), "rootfs", "tmp", "setup_script.sh")

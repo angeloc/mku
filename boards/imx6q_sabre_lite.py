@@ -104,60 +104,34 @@ respawn
 exec /sbin/getty 115200 ttymxc1
 """
 
-PRECISE_KERNEL_URL    = "http://rcn-ee.net/deb/precise-armhf/v3.7.5-imx6/linux-image-3.7.5-imx6_1.0precise_armhf.deb"
-QUANTAL_KERNEL_URL    = "http://rcn-ee.net/deb/quantal-armhf/v3.7.5-imx6/linux-image-3.7.5-imx6_1.0quantal_armhf.deb"
-PRECISE_FIRMWARE_URL  = "http://rcn-ee.net/deb/precise-armhf/v3.7.5-imx6/linux-firmware-image_1.0precise_armhf.deb"
-QUANTAL_FIRMWARE_URL  = "http://rcn-ee.net/deb/quantal-armhf/v3.7.5-imx6/linux-firmware-image_1.0quantal_all.deb"
-PRECISE_DTBS_URL      = "http://rcn-ee.net/deb/precise-armhf/v3.7.5-imx6/3.7.5-imx6-dtbs.tar.gz"
-QUANTAL_DTBS_URL      = "http://rcn-ee.net/deb/quantal-armhf/v3.7.5-imx6/3.7.5-imx6-dtbs.tar.gz"
-PRECISE_KERNEL_SUFFIX = "-3.7.5-imx6"
-QUANTAL_KERNEL_SUFFIX = "-3.7.5-imx6"
+KERNEL_SUFFIX    = "-boundary-imx_3.0.35_1.1.1"
 
 import subprocess
 import os
 
-def board_prepare(os_version):
-  KERNEL_URL    = eval(os_version + "_KERNEL_URL")
-  KERNEL_SUFFIX = eval(os_version + "_KERNEL_SUFFIX")
-  FIRMWARE_URL  = eval(os_version + "_FIRMWARE_URL")
-  DTBS_URL      = eval(os_version + "_DTBS_URL")
+def board_prepare():
+  KERNEL_PATH = os.path.join(BOARD_CONFIGS_PATH, "support", "imx6q_sabre_lite")
   
   print ("""
   ************************************************************************
   *                                                                      *
-  * For this board to boot, please update the on-board uboot to the      *
+  * To boot this board, please update the on-board uboot to the          *
   * latest version as described here:                                    *
   *                                                                      *
   * http://boundarydevices.com/i-mx-6dq-u-boot-updates/                  *
-  *                                                                      *
-  * Also, you should really recompile your own kernel,                   *
-  * cause there is not a precompiled version available.                  *
-  *                                                                      *
-  * Please run with "prepare_kernel" and then recompile your own kernel. *
-  * Then copy uImage to boot/ and modules to rootfs/lib/modules/         *
   *                                                                      *
   ************************************************************************
   """)
   
   #Getting KERNEL
-  #kernel_name = os_version + KERNEL_SUFFIX + "-kernel.deb"
-  #kernel_path = os.path.join(os.getcwd(), "tmp", kernel_name)
-  #print(KERNEL_URL)
-  #ret = subprocess.call(["curl" , "-#", "-o", kernel_path, "-C", "-", KERNEL_URL])
+  kernel_path = os.path.join(KERNEL_PATH, "uImage" + KERNEL_SUFFIX)
+  print(kernel_path)
+  ret = subprocess.call(["sudo", "cp", "-av" , kernel_path, "boot"])
   
-  #Getting FIRMWARE
-  #firmware_name = os_version + KERNEL_SUFFIX + "-firmware.deb"
-  #firmware_path = os.path.join(os.getcwd(), "tmp", firmware_name)
-  #print(FIRMWARE_URL)
-  #ret = subprocess.call(["curl" , "-#", "-o", firmware_path, "-C", "-", FIRMWARE_URL])
-  
-  #Getting DTB
-  #dtbs_name = os_version + KERNEL_SUFFIX + "-dtbs.tar.gz"
-  #dtbs_path = os.path.join(os.getcwd(), "tmp", dtbs_name)
-  #print(DTBS_URL)
-  #ret = subprocess.call(["curl" , "-#", "-o", dtbs_path, "-C", "-", DTBS_URL])
-  #ret = subprocess.call(["tar", "zxf", dtbs_path, "-C", "tmp/"])
-  #ret = subprocess.call(["sudo", "cp" , dtbs_path, "boot/"])
+  #Getting MODULES
+  modules_path = os.path.join(KERNEL_PATH,  "modules" + KERNEL_SUFFIX + ".tar.gz")
+  print(modules_path)
+  ret = subprocess.call(["sudo", "tar", "xzfv", modules_path, "-C", "rootfs"])
   
   #Setting up bootscript
   bootcmd_path = os.path.join(os.getcwd(), "tmp", "boot.cmd")
@@ -180,28 +154,6 @@ def board_prepare(os_version):
   console.write(CONSOLE)
   console.close()
   ret = subprocess.call(["sudo", "cp" , console_path, "rootfs/etc/init/"])
-  
-  #installing kernel and firmware
-  #ret = subprocess.call(["cp" , kernel_path, "rootfs/tmp"])
-  #ret = subprocess.call(["cp" , firmware_path, "rootfs/tmp"])
-  #rootfs_path = os.path.join(os.getcwd(), "rootfs")
-  #ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + kernel_name])
-  #ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + firmware_name])
-  #ret = subprocess.call(["cp", "-v", "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
-  #ret = subprocess.call(["cp", "-v", "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
-  #ret = subprocess.call(["mkimage", "-A", "arm", "-O", "linux", 
-  #                        "-T", "kernel", "-C", "none", "-a", "0x10008000", "-e", "0x10008000",
-  #                        "-n", '"Linux"', "-d", "boot/zImage", "boot/uImage"])
-  #ret = subprocess.call(["mkimage", "-A", "arm", "-O", "linux", "-a", "0", "-e", "0",
-  #                        "-T", "ramdisk", "-C", "none",
-  #                        "-n", '"Ramdisk"', "-d", "boot/initrd.img", "boot/uInitrd"])
-  
-  #cleaning
-  #ret = subprocess.call(["rm", "boot/zImage"])
-  #ret = subprocess.call(["rm", "boot/initrd.img"])
-  #ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "/tmp/" + kernel_name])
-  #ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "-rf", "/boot/"])
-  #ret = subprocess.call(["sudo", "chroot", rootfs_path, "mkdir", "/boot/"])
 
 def prepare_kernel_devenv():
   import os
