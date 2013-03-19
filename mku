@@ -208,7 +208,7 @@ def setup_core():
   filepath = os.path.join(os.getcwd(), "tmp", os_version + "-ubuntu-core.tar.gz")
   print(core_url)
   ret = subprocess.call(["curl" , "-#", "-o", filepath, "-C", "-", core_url])
-  print("To extract Ubuntu core we should use root permission, please provide password if requested")
+  print("To extract Ubuntu core we need root permission, please provide password if requested")
   ret = subprocess.call(["sudo", "tar", "zxf", filepath, "-C", rootfs_path])
   ret = subprocess.call(["sudo", "cp" , "/usr/bin/qemu-arm-static", "rootfs/usr/bin/"])
   if ret:
@@ -243,7 +243,7 @@ def setup_rootfs():
 
 def setup_network():
   global INTERFACES
-  print("Configuring interfaces")
+  print("Configuring network interfaces")
   INTERFACES += ("auto lo \n"
                  "iface lo inet loopback \n\n")
   if use_dhcp == "yes":
@@ -278,7 +278,7 @@ def prepare_kernel_devenv():
 def list_boards():
   print("\nCurrently supported boards:\n")
   
-  for board in os.listdir(BOARD_CONFIGS_PATH):
+  for board in sorted(os.listdir(BOARD_CONFIGS_PATH)):
     if ".py" in board:
       print(board[:-3])
   print("\n")

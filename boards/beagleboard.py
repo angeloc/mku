@@ -41,12 +41,14 @@ vram=16MB
  
 mmcroot=/dev/mmcblk0p2 ro
 mmcrootfstype=ext4 rootwait fixrtc
+
+dtb_file=omap3-beagle-xm.dtb
  
 optargs=console=tty0
  
 mmc_load_image=fatload mmc 0:1 0x80300000 zImage
 mmc_load_initrd=fatload mmc 0:1 0x81600000 initrd.img; setenv initrd_size ${filesize}
-mmc_load_dtb=fatload mmc 0:1 0x815f0000 /dtbs/${dtb_file}
+mmc_load_dtb=fatload mmc 0:1 0x815f0000 ${dtb_file}
  
 deviceargs=setenv device_args buddy=${buddy} buddy2=${buddy2} wl12xx_clk=${wl12xx_clk}
 mmcargs=setenv bootargs console=${console} ${optargs} vram=${vram} omapfb.mode=${defaultdisplay}:${dvimode} omapdss.def_disp=${defaultdisplay} root=${mmcroot} rootfstype=${mmcrootfstype} ${device_args}
@@ -115,7 +117,7 @@ def board_prepare():
   print(DTBS_URL)
   ret = subprocess.call(["curl" , "-#", "-o", dtbs_path, "-C", "-", DTBS_URL])
   ret = subprocess.call(["tar", "zxf", dtbs_path, "-C", "tmp/"])
-  ret = subprocess.call(["sudo", "cp" , dtbs_path, "boot/"])
+  ret = subprocess.call(["cp", "-v", "tmp/omap3-beagle-xm.dtb", "boot"])
   
   #Setting up uEnv.txt
   ret = subprocess.call(["cp", "-v", mlo_path, "boot"])
@@ -134,11 +136,12 @@ def board_prepare():
   
   #installing kernel
   ret = subprocess.call(["cp" , kernel_path, "rootfs/tmp"])
+  ret = subprocess.call(["cp" , firmware_path, "rootfs/tmp"])
   rootfs_path = os.path.join(os.getcwd(), "rootfs")
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + kernel_name])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + firmware_name])
-  ret = subprocess.call(["cp" , "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
-  ret = subprocess.call(["cp" , "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
+  ret = subprocess.call(["cp", "-v" , "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
+  ret = subprocess.call(["cp", "-v" , "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
   
   #cleaning
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "/tmp/" + kernel_name])

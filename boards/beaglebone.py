@@ -97,8 +97,8 @@ def board_prepare():
   ret = subprocess.call(["cp" , kernel_path, "rootfs/tmp"])
   rootfs_path = os.path.join(os.getcwd(), "rootfs")
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + kernel_name])
-  ret = subprocess.call(["cp" , "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
-  ret = subprocess.call(["cp" , "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
+  ret = subprocess.call(["cp", "-v" , "rootfs/boot/initrd.img" + KERNEL_SUFFIX, "boot/initrd.img"])
+  ret = subprocess.call(["cp", "-v" , "rootfs/boot/vmlinuz" + KERNEL_SUFFIX, "boot/zImage"])
   
   #cleaning
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "/tmp/" + kernel_name])
