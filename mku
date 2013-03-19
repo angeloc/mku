@@ -84,10 +84,17 @@ rm -rf /usr/share/man/
 sys.path.append(BOARD_CONFIGS_PATH)
 
 def check_args():
-  parser = argparse.ArgumentParser()
+  from argparse import RawTextHelpFormatter
+  parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
   
   parser.add_argument("mode", 
-    help = '''prepare  :  prepares the environment, makes folders, downloads software''',
+    help = '''list           : list supported platforms
+prepare        : prepares the environment, makes folders, downloads software
+prepare_kernel : download and configure kernel sources for selected platform
+pack           : makes a tar.gz from your boot and rootfs
+install_boot   : copy boot files into supplied boot folder
+install_rootfs : copy rootfs files into supplied rootfs folder
+''',
     choices=['list','prepare', 'prepare_kernel', 'pack', "install_boot", "install_rootfs"])
   
   parser.add_argument("-d", "--destination",
