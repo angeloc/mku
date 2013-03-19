@@ -1,6 +1,6 @@
 #MKU, template based rootfs builder for Ubuntu.
-#This file is the template for the beaglebone board.
-#Copyright (C) Angelo Compagnucci <angelo.compagnucci@gmail.com> 2013
+#This file is the template for the IMX6Q Sabre Lite board.
+#Copyright (C) 2013 Angelo Compagnucci <angelo.compagnucci@gmail.com>
 
 #This program is free software; you can redistribute it and/or
 #modify it under the terms of the GNU General Public License
