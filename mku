@@ -91,11 +91,12 @@ def check_args():
     help = '''list           : list supported platforms
 prepare        : prepares the environment, makes folders, downloads software
 prepare_kernel : download and configure kernel sources for selected platform
+scratchboxit   : prepare a scratchbox2 development environment
 pack           : makes a tar.gz from your boot and rootfs
 install_boot   : copy boot files into supplied boot folder
 install_rootfs : copy rootfs files into supplied rootfs folder
 ''',
-    choices=['list','prepare', 'prepare_kernel', 'pack', "install_boot", "install_rootfs"])
+    choices=['list','prepare', 'prepare_kernel', 'scratchboxit', 'pack', "install_boot", "install_rootfs"])
   
   parser.add_argument("-d", "--destination",
     help = "Destination folder, works for install_boot install_rootfs commands",
@@ -149,6 +150,7 @@ def get_configuration():
   boardlib = importlib.import_module(board_script)
   boardlib.BOARD_CONFIGS_PATH = BOARD_CONFIGS_PATH
   boardlib.os_version = os_version
+  boardlib.board_script = board_script
   
   try:
     new_user          = config['ROOTFS']['USER']
@@ -288,6 +290,20 @@ def install_boot(destination):
 
 def install_rootfs(destination):
   ret = subprocess.call(" ".join(["sudo", "cp", "-uav", "rootfs/*", destination]), shell=True)
+  
+def scratchboxit():
+  DEPS = ["sb2", "arm-linux-gnueabihf-gcc", "arm-linux-gnueabi-gcc", "qemu-arm"]
+  DEPS_PACKAGES = ["scratchbox2", "build-essential", "qemu-user", "arm-linux-gnueabi-gcc", "gcc-arm-linux-gnueabihf"]
+  try:
+    for dep in DEPS:
+      output = subprocess.check_output(["which" , dep])
+  except:
+    print("""
+    Missing dependencies, you can install them with:
+    sudo apt-get install %s""" % " ".join(DEPS_PACKAGES))
+    exit(1)
+  os.chdir("rootfs")
+  ret = subprocess.call(["sb2-init", "-c", "/usr/bin/qemu-arm", name.upper(), "arm-linux-gnueabihf-gcc"])
 
 if __name__ == "__main__":
   check_args()
@@ -295,6 +311,7 @@ if __name__ == "__main__":
   get_configuration()
   if args.mode == "prepare": prepare()
   if args.mode == "prepare_kernel": prepare_kernel_devenv()
+  if args.mode == "scratchboxit": scratchboxit()
   if args.mode == "install_boot":
     if not args.destination:
       print ("Please specify a destination directory")

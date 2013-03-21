@@ -57,6 +57,10 @@ You can prepare your kernel development environment with:
 
 	mku prepare_kernel
 
+You can also prepare scratchbox2 environment with:
+
+	mku scratchboxit
+
 Acknowledgments
 ---------------
 
