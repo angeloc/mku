@@ -17,7 +17,7 @@ IGEP support
 
 * [modules]( http://downloads.isee.biz/pub/releases/linux_kernel/v2.6.37-5/modules-2.6.37-5.tgz)
 
-* [MLO](it's inside this archive http://labs.isee.biz/images/7/79/Igep-x-loader-2.5.0-2.tar.bz2). Follow the guide to understand how to use [here](http://labs.isee.biz/index.php/How_to_boot_from_MicroSD_Card#X-Loader_.28MLO.29)
+* [MLO](http://labs.isee.biz/images/7/79/Igep-x-loader-2.5.0-2.tar.bz2). Follow the guide to understand how to use [here](http://labs.isee.biz/index.php/How_to_boot_from_MicroSD_Card#X-Loader_.28MLO.29)
 
 * kernel and module should be used as described [here](http://labs.isee.biz/index.php/How_to_boot_from_MicroSD_Card#Install_the_kernel_modules) using modules and kernel files previously downloaded.
 
