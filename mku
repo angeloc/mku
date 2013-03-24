@@ -71,7 +71,7 @@ sed -i "/^# deb .*universe/ s/^# //" /etc/apt/sources.list
 sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
 {update} && apt-get update
-{update} && apt-get -y install {runtime_deps}
+{update} && apt-get -y --force-yes install {runtime_deps}
 {update} && apt-get -f -y --force-yes install
 
 echo "Cleaning rootfs ..."
@@ -307,7 +307,9 @@ def scratchboxit():
 
 if __name__ == "__main__":
   check_args()
-  if args.mode == "list": list_boards()
+  if args.mode == "list": 
+    list_boards()
+    exit(0)
   get_configuration()
   if args.mode == "prepare": prepare()
   if args.mode == "prepare_kernel": prepare_kernel_devenv()
@@ -321,5 +323,5 @@ if __name__ == "__main__":
       print ("Please specify a destination directory")
     install_rootfs(args.destination)
   if args.mode == "pack": pack()
-  
+  print("Done!")
   
