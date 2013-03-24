@@ -12,12 +12,12 @@ If it's different, should prompt the user for the update. The update should be a
 	git reset --hard
 	git pull
 
-IGEP support
+<s>IGEP support</s>
 ------------
 
 * [kernel](http://downloads.isee.biz/pub/releases/linux_kernel/v2.6.37-5/zImage-2.6.37-5.bin)
 
-* [modules]( http://downloads.isee.biz/pub/releases/linux_kernel/v2.6.37-5/modules-2.6.37-5.tgz)
+* [modules](http://downloads.isee.biz/pub/releases/linux_kernel/v2.6.37-5/modules-2.6.37-5.tgz)
 
 * [MLO](http://labs.isee.biz/images/7/79/Igep-x-loader-2.5.0-2.tar.bz2).
   Follow the guide to understand how to use 

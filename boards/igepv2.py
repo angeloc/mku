@@ -39,7 +39,7 @@ def board_prepare():
   bin_path = os.path.join(os.getcwd(), "tmp", "igep-x-loader.tar.bz2")
   print(BIN_URL)
   ret = subprocess.call(["curl" , "-#", "-o", bin_path, "-C", "-", BIN_URL])
-  ret = subprocess.call(["tar", "xzfv", bin_path, "-C", "tmp"])
+  ret = subprocess.call(["tar", "xjf", bin_path, "-C", "tmp"])
   ret = subprocess.call(" ".join(["cp", "-uav", "tmp/binaries/*", "boot"]), shell=True)
   
   #Getting KERNEL
@@ -49,13 +49,14 @@ def board_prepare():
   ret = subprocess.call(["curl" , "-#", "-o", kernel_path, "-C", "-", KERNEL_URL])
   
   #Installing KERNEL
-  ret = subprocess.call(["cp" , kernel_path, "boot/zImage"])
+  ret = subprocess.call(["cp", "-v", kernel_path, "boot/zImage"])
   
   #Getting MODULES
-  modules_path = os.path.join(os.getcwd(),  "modules" + KERNEL_SUFFIX + ".tar.gz")
+  modules_path = os.path.join(os.getcwd(), "tmp", "modules" + KERNEL_SUFFIX + ".tar.gz")
   print(MODULES_URL)
   ret = subprocess.call(["curl" , "-#", "-o", modules_path, "-C", "-", MODULES_URL])
-  ret = subprocess.call(["sudo", "tar", "xzfv", modules_path, "-C", "rootfs"])
+  print("Copying modules ...")
+  ret = subprocess.call(["sudo", "tar", "xzf", modules_path, "-C", "rootfs"])
   
   #Setting up console
   console_path = os.path.join(os.getcwd(), "tmp", "console.conf")
@@ -63,24 +64,20 @@ def board_prepare():
   console.write(CONSOLE)
   console.close()
   ret = subprocess.call(["sudo", "cp" , console_path, "rootfs/etc/init/"])
-  
-  #cleaning
-  ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "-rf", "/boot/"])
-  ret = subprocess.call(["sudo", "chroot", rootfs_path, "mkdir", "/boot/"])
 
 def prepare_kernel_devenv():
   import os
-  DEPS = ["git", "arm-linux-gnueabihf-gcc", "arm-linux-gnueabi-gcc"]
-  DEPS_PACKAGES = ["git", "gcc-arm-linux-gnueabi", "gcc-arm-linux-gnueabihf"]
+  DEPS = ["arm-linux-gnueabihf-gcc"]
+  DEPS_PACKAGES = ["gcc-arm-linux-gnueabihf"]
   try:
     for dep in DEPS:
       output = subprocess.check_output(["which" , dep])
   except:
     print("""
     Missing dependencies, you can install them with:
-    sudo apt-get install %s""" % " ".join(DEPS_PACKAGES))
+    sudo apt-get install %s\n""" % " ".join(DEPS_PACKAGES))
     exit(1)
-  print("This process may take a while, please wait ...")
+  print(KERNEL_SRC_URL)
   kernel_src_name = "kernel" + KERNEL_SUFFIX + ".tar.gz"
   kernel_src_path = os.path.join(os.getcwd(), "tmp", kernel_src_name)
   ret = subprocess.call(["curl" , "-#", "-o", kernel_src_path, "-C", "-", KERNEL_SRC_URL])
