@@ -1,14 +1,24 @@
-# Distro version, chooose from precise, quantal
 [PROJECT]
 name = demo
 append_timestamp = yes
 
 [ROOTFS]
+# Distro version, choose from precise, quantal
 VERSION       = precise
+
+# You can obtain a list of supported boards with "mku list"
 BOARD         = beaglebone
+
+# Update the rootfs while building
 UPDATE        = no
+
+# Software you want added to the final rootfs
 RUNTIME_DEPS  = 
+
+# Choose a root password here if you want root user enabled
 ROOT_PASSWORD =
+
+# User to be added to the rootfs
 # USER          = tmpuser
 # PASSWORD      = tmppwd
 # USER_IS_ADMIN = no
