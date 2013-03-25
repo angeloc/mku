@@ -43,7 +43,7 @@ def board_prepare():
   ret = subprocess.call(" ".join(["cp", "-uav", "tmp/binaries/*", "boot"]), shell=True)
   
   #Getting KERNEL
-  kernel_name = KERNEL_SUFFIX + "-kernel.deb"
+  kernel_name = KERNEL_SUFFIX + "-kernel.bin"
   kernel_path = os.path.join(os.getcwd(), "tmp", kernel_name)
   print(KERNEL_URL)
   ret = subprocess.call(["curl" , "-#", "-o", kernel_path, "-C", "-", KERNEL_URL])
