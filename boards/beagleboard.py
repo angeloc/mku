@@ -165,4 +165,3 @@ def prepare_kernel_devenv():
   os.chdir("kernel")
   ret = subprocess.call(["git", "checkout", "origin/beagleboard-3.6", "-b", "beagleboard-3.6"])
   ret = subprocess.call(["./patch.sh"])
-  print("Done!")

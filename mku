@@ -92,11 +92,12 @@ def check_args():
 prepare        : prepares the environment, makes folders, downloads software
 prepare_kernel : download and configure kernel sources for selected platform
 scratchboxit   : prepare a scratchbox2 development environment
+scratchboxfix  : fixes scratchbox linker flags
 pack           : makes a tar.gz from your boot and rootfs
 install_boot   : copy boot files into supplied boot folder
 install_rootfs : copy rootfs files into supplied rootfs folder
 ''',
-    choices=['list','prepare', 'prepare_kernel', 'scratchboxit', 'pack', "install_boot", "install_rootfs"])
+    choices=['list','prepare', 'prepare_kernel', 'scratchboxit', 'scratchboxfix', 'pack', "install_boot", "install_rootfs"])
   
   parser.add_argument("-d", "--destination",
     help = "Destination folder, works for install_boot install_rootfs commands",
@@ -292,8 +293,8 @@ def install_rootfs(destination):
   ret = subprocess.call(" ".join(["sudo", "cp", "-uav", "rootfs/*", destination]), shell=True)
   
 def scratchboxit():
-  DEPS = ["sb2", "arm-linux-gnueabihf-gcc", "arm-linux-gnueabi-gcc", "qemu-arm"]
-  DEPS_PACKAGES = ["scratchbox2", "build-essential", "qemu-user", "arm-linux-gnueabi-gcc", "gcc-arm-linux-gnueabihf"]
+  DEPS = ["sb2", "arm-linux-gnueabihf-gcc", "qemu-arm"]
+  DEPS_PACKAGES = ["scratchbox2", "build-essential", "qemu-user", "gcc-arm-linux-gnueabihf"]
   try:
     for dep in DEPS:
       output = subprocess.check_output(["which" , dep])
@@ -302,16 +303,42 @@ def scratchboxit():
     Missing dependencies, you can install them with:
     sudo apt-get install %s""" % " ".join(DEPS_PACKAGES))
     exit(1)
-  os.chdir("rootfs")
+  os.chdir(rootfs_path)
   ret = subprocess.call(["sb2-init", "-c", "/usr/bin/qemu-arm", name.upper(), "arm-linux-gnueabihf-gcc"])
+
+def scratchbox_fix_for_linker():
+  gcc_config_path = os.path.join(os.path.expanduser("~"), ".scratchbox2", name.upper(), "sb2.config.d/gcc.config.lua")
+  print ("Fixing :", gcc_config_path)
+  gcc_config_file = None
+  try:
+    gcc_config_file = open(gcc_config_path,'r')
+  except:
+    print("Error opening scratchbox2 gcc configuration file")
+    exit(1)
+  content = "".join(gcc_config_file.readlines())
+  content = content.replace('extra_cross_compiler_args="   -L@SBOX_TARGET_ROOT@/usr/lib -L@SBOX_TARGET_ROOT@/lib"',
+                            'extra_cross_compiler_args="   -L@SBOX_TARGET_ROOT@/usr/lib/arm-linux-gnueabihf -L@SBOX_TARGET_ROOT@/lib/arm-linux-gnueabihf -L@SBOX_TARGET_ROOT@/lib"')
+  content = content.replace('extra_cross_ld_args="-rpath-link @SBOX_TARGET_ROOT@/usr/lib:@SBOX_TARGET_ROOT@/lib"',
+                            'extra_cross_ld_args="-rpath-link @SBOX_TARGET_ROOT@/usr/lib/arm-linux-gnueabihf:@SBOX_TARGET_ROOT@/lib/arm-linux-gnueabihf:@SBOX_TARGET_ROOT@/lib"')
+  gcc_config_file.close()
+  try:
+    gcc_config_file = open(gcc_config_path,'w')
+  except:
+    print("Error opening scratchbox2 gcc configuration file")
+    exit(1)
+  gcc_config_file.write(content)
+  gcc_config_file.close()
 
 if __name__ == "__main__":
   check_args()
-  if args.mode == "list": list_boards()
+  if args.mode == "list": 
+    list_boards()
+    exit(0)
   get_configuration()
   if args.mode == "prepare": prepare()
   if args.mode == "prepare_kernel": prepare_kernel_devenv()
   if args.mode == "scratchboxit": scratchboxit()
+  if args.mode == "scratchboxfix": scratchbox_fix_for_linker()
   if args.mode == "install_boot":
     if not args.destination:
       print ("Please specify a destination directory")
@@ -321,5 +348,5 @@ if __name__ == "__main__":
       print ("Please specify a destination directory")
     install_rootfs(args.destination)
   if args.mode == "pack": pack()
-  
+  print("Done!")
   
