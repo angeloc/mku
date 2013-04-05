@@ -71,7 +71,7 @@ sed -i "/^# deb .*universe/ s/^# //" /etc/apt/sources.list
 sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
 {update} && apt-get update
-{update} && apt-get -y install {runtime_deps}
+{update} && apt-get -y --force-yes install {runtime_deps}
 {update} && apt-get -f -y --force-yes install
 
 echo "Cleaning rootfs ..."
