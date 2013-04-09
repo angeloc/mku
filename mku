@@ -51,6 +51,7 @@ address           = None
 dns_servers       = None
 boardlib          = None
 update            = None
+hostname          = None
 
 rootfs_path = os.path.join(os.getcwd(), "rootfs")
 boot_path = os.path.join(os.getcwd(), "boot")
@@ -67,6 +68,8 @@ echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
+echo {hostname} > /etc/hostname
+
 sed -i "/^# deb .*universe/ s/^# //" /etc/apt/sources.list
 sed -i "/^# deb .*multiverse/ s/^# //" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /" /etc/apt/sources.list
@@ -79,6 +82,19 @@ rm -rf /usr/share/doc/
 rm -rf /usr/share/doc-base/
 dpkg --purge man-db manpages
 rm -rf /usr/share/man/
+"""
+
+RCLOCAL = """
+echo $(cat /etc/lsb-release | awk '{FS="="} /DISTRIB_DESCRIPTION/ {print $2}' | sed 's/"//g') '\\\\n \\\\l \\\\o (\\\\s \\\\m \\\\r) \\\\t' > /etc/issue
+echo >> /etc/issue
+echo "Your network configuration:" >> /etc/issue
+echo -n "IP ADDRESS   : ">> /etc/issue
+ip address show eth0 | awk '/inet / {print $2}' | cut -d/ -f1 >> /etc/issue
+echo -n "DEFAULT ROUTE: ">> /etc/issue
+ip route show | awk '/default / {print $3}' >> /etc/issue
+echo >> /etc/issue
+echo "Built with MKU: https://github.com/angeloc/mku">> /etc/issue
+echo >> /etc/issue
 """
 
 sys.path.append(BOARD_CONFIGS_PATH)
@@ -125,6 +141,7 @@ def get_configuration():
   global gateway    
   global dns_servers
   global update
+  global hostname
   
   global boardlib
   
@@ -144,6 +161,7 @@ def get_configuration():
     board_script  = config['ROOTFS']['BOARD']
     runtime_deps  = config['ROOTFS']['RUNTIME_DEPS']
     root_password = config['ROOTFS']['ROOT_PASSWORD']
+    hostname      = config['NETWORK']['HOSTNAME']
   except Exception as ex:
     print("%s is missing, please add it to project.mku" % ex)
     exit(1)
@@ -223,6 +241,7 @@ def setup_board():
   boardlib.board_prepare()
 
 def setup_rootfs():
+  #CONFIGURING SETUP SCRIPT
   setup_script_path = os.path.join(os.getcwd(), "rootfs", "tmp", "setup_script.sh")
   setup_script_file = open(setup_script_path, "w")
   setup_script = SETUP_SCRIPT.format(runtime_deps=runtime_deps,
@@ -233,9 +252,19 @@ def setup_rootfs():
                                       new_user_password=new_user_password,
                                       is_admin = '-G adm,sudo' if new_user_is_admin else '',
                                       interfaces=INTERFACES,
-                                      update = 'true' if (runtime_deps or update) else 'false')
+                                      update = 'true' if (runtime_deps or update) else 'false',
+                                      hostname = hostname)
   setup_script_file.write(setup_script)
-  setup_script_file.close()
+  setup_script_file.close
+  
+  #CONFIGURING RC.LOCAL
+  rclocal_path = os.path.join(os.getcwd(), "tmp", "rc.local")
+  rclocal_file = open(rclocal_path, "w")
+  rclocal_file.write(RCLOCAL)
+  rclocal_file.close()
+  
+  #SETTING ALL IT UP
+  ret = subprocess.call(["sudo", "cp", "-v", "tmp/rc.local", "rootfs/etc"])
   ret = subprocess.call(["sudo", "cp", "-a", "tmp/archives", "rootfs/var/cache/apt/"])
   ret = subprocess.call(["sudo", "mount", "-t", "proc", "proc", "rootfs/proc"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "/bin/sh", "tmp/setup_script.sh"])

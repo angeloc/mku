@@ -24,6 +24,7 @@ ROOT_PASSWORD =
 # USER_IS_ADMIN = no
 
 [NETWORK]
+HOSTNAME    = demo
 INTERFACE   = eth0
 USE_DHCP    = yes
 ADDRESS     = 192.168.1.100
