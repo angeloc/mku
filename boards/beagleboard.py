@@ -150,8 +150,8 @@ def board_prepare():
 
 def prepare_kernel_devenv():
   import os
-  DEPS = ["git", "arm-linux-gnueabihf-gcc", "arm-linux-gnueabi-gcc"]
-  DEPS_PACKAGES = ["git", "gcc-arm-linux-gnueabi", "gcc-arm-linux-gnueabihf"]
+  DEPS = ["git", "arm-linux-gnueabihf-gcc"]
+  DEPS_PACKAGES = ["git", "gcc-arm-linux-gnueabihf"]
   try:
     for dep in DEPS:
       output = subprocess.check_output(["which" , dep])
