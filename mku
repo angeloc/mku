@@ -57,12 +57,14 @@ rootfs_path = os.path.join(os.getcwd(), "rootfs")
 boot_path = os.path.join(os.getcwd(), "boot")
 
 INTERFACES = ""
+
 SETUP_SCRIPT = """
 echo "{interfaces}" > /etc/network/interfaces
 locale-gen en_US.UTF-8
 
+echo Setting passwords ...
 {set_root_password} && echo root:{root_password} | chpasswd
-{set_new_user}      && useradd {new_user} -m -p {new_user_password} {is_admin}
+{set_new_user} && useradd {new_user} -m -p {new_user_password} {is_admin}
 
 echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/99translations
 
@@ -223,6 +225,7 @@ def prepare():
   setup_network()
   setup_rootfs()
   setup_board()
+  setup_rootfs()
   clean_apt()
 
 def setup_core():
@@ -242,7 +245,7 @@ def setup_board():
 
 def setup_rootfs():
   #CONFIGURING SETUP SCRIPT
-  setup_script_path = os.path.join(os.getcwd(), "rootfs", "tmp", "setup_script.sh")
+  setup_script_path = os.path.join(rootfs_path, "tmp", "setup_script.sh")
   setup_script_file = open(setup_script_path, "w")
   setup_script = SETUP_SCRIPT.format(runtime_deps=runtime_deps,
                                       set_root_password = 'true' if root_password else 'false',
@@ -255,7 +258,7 @@ def setup_rootfs():
                                       update = 'true' if (runtime_deps or update) else 'false',
                                       hostname = hostname)
   setup_script_file.write(setup_script)
-  setup_script_file.close
+  setup_script_file.close()
   
   #CONFIGURING RC.LOCAL
   rclocal_path = os.path.join(os.getcwd(), "tmp", "rc.local")
@@ -268,7 +271,7 @@ def setup_rootfs():
   ret = subprocess.call(["sudo", "cp", "-a", "tmp/archives", "rootfs/var/cache/apt/"])
   ret = subprocess.call(["sudo", "mount", "-t", "proc", "proc", "rootfs/proc"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "/bin/sh", "tmp/setup_script.sh"])
-  ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "tmp/setup_script.sh"])
+  #ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "tmp/setup_script.sh"])
   ret = subprocess.call(["sudo", "cp", "-au", "rootfs/var/cache/apt/archives/", "tmp/"])
   ret = subprocess.call(["sudo", "umount", "rootfs/proc"])
 
