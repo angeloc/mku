@@ -41,7 +41,10 @@ How to use
 
 * When done, you can add your files to the rootfs folder.
 
-* Your rootfs is now done. To use it, copy boot folder and rootfs folder to your embedded board. Generally it's simply a matter of copy these two folders into the corrispectively folders inside a microsd card.
+* Your rootfs is now done. To use it, copy boot folder and rootfs folder to your embedded board. You can install them with:
+
+		mku install_boot -d /media/boot
+		mku install_rootfs -d /media/rootfs
 
 * If you want you can `pack` your boot and rootfs with:
 
