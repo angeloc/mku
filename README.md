@@ -11,7 +11,7 @@ With MKU you can generate and deploy a custom boot and rootfs, built against Ubu
 
 Everything is handled automatically by the software: it downloads boot files, kernels, Ubuntu core, it sets up directory layout, and extract all the necessary files to build a complete boot and rootfs for your board.
 
-MKU keeps every file it download in a temporary folder so you cannot have to redownload files over and over again.
+MKU keeps every file it download in a temporary folder so you do not have to redownload files over and over again.
 
 Install
 -------
@@ -20,24 +20,24 @@ Install
   
 		git clone https://github.com/angeloc/mku.git
 
-* Append the folder you cloned to the $PATH in bashrc:
+* Append the folder you cloned to the $PATH variable in bashrc:
 
 		echo "PATH=$PATH:~/mku" >> ~/.bashrc
 
 How to use
 ----------
 
-* Create a folder for the new rootfs like `mkurootfs`
+* Create a folder for the new rootfs like `mkurootfs`.
 
-* Copy `project-sample.mku` to `mkurootfs/project.mku`
+* Copy `project-sample.mku` to `mkurootfs/project.mku`.
 
-* Change the default values into `project.mku` to suite your needs
+* Change `project.mku` default values to suite your needs.
 
 * Enter the folder and prepare the environment with:
 
 		mku prepare
 
-* Please wait until it completes, it may take a while due to file downloading.
+* Please wait until it completes, it may take a while due to file downloading the first time.
 
 * When done, you can add your files to the rootfs folder.
 
@@ -60,7 +60,7 @@ You can prepare your kernel development environment with:
 
 	mku prepare_kernel
 
-You can also prepare scratchbox2 environment with:
+You can also prepare a scratchbox2 environment with:
 
 	mku scratchboxit
 
