@@ -9,8 +9,8 @@ VERSION       = precise
 # You can obtain a list of supported boards with "mku list"
 BOARD         = beaglebone
 
-# Update the rootfs while building
-UPDATE        = no
+# Upgrade the rootfs while building
+UPGRADE        = no
 
 # Software you want added to the final rootfs
 RUNTIME_DEPS  = 

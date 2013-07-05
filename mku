@@ -50,7 +50,7 @@ netmask           = None
 address           = None
 dns_servers       = None
 boardlib          = None
-update            = None
+upgrade           = None
 hostname          = None
 
 rootfs_path = os.path.join(os.getcwd(), "rootfs")
@@ -78,6 +78,7 @@ sed -i "/^deb-src.*/ s/^/# /g" /etc/apt/sources.list
 {update} && apt-get update
 {update} && apt-get -y --force-yes install {runtime_deps}
 {update} && apt-get -f -y --force-yes install
+{upgrade} && apt-get -y --force-yes upgrade
 
 echo "Cleaning rootfs ..."
 rm -rf /usr/share/doc/
@@ -142,7 +143,7 @@ def get_configuration():
   global netmask    
   global gateway    
   global dns_servers
-  global update
+  global upgrade
   global hostname
   
   global boardlib
@@ -161,6 +162,7 @@ def get_configuration():
     append_timest = True if config['PROJECT']['APPEND_TIMESTAMP'] == 'yes' else False
     os_version    = config['ROOTFS']['VERSION'].upper()
     board_script  = config['ROOTFS']['BOARD']
+    upgrade       = True if config['ROOTFS']['UPGRADE'] == 'yes' else False
     runtime_deps  = config['ROOTFS']['RUNTIME_DEPS']
     root_password = config['ROOTFS']['ROOT_PASSWORD']
     hostname      = config['NETWORK']['HOSTNAME']
@@ -177,7 +179,6 @@ def get_configuration():
     new_user          = config['ROOTFS']['USER']
     new_user_password = config['ROOTFS']['PASSWORD']
     new_user_is_admin = True if config['ROOTFS']['USER_IS_ADMIN'] == 'yes' else False
-    update            = True if config['ROOTFS']['UPDATE'] == 'yes' else False
   except:
     pass
   
@@ -233,7 +234,7 @@ def setup_core():
   print(core_url)
   ret = subprocess.call(["curl" , "-#", "-o", filepath, "-C", "-", core_url])
   print("To extract Ubuntu core we need root permission, please provide password if requested")
-  ret = subprocess.call(["sudo", "tar", "zxf", filepath, "-C", rootfs_path])
+  ret = subprocess.call(["sudo", "tar", "zxfk", filepath, "-C", rootfs_path])
   ret = subprocess.call(["sudo", "cp" , "/usr/bin/qemu-arm-static", "rootfs/usr/bin/"])
   if ret:
     print("Something went wrong when extracting rootfs")
@@ -255,7 +256,8 @@ def setup_rootfs():
                                       new_user_password=new_user_password,
                                       is_admin = '-G adm,sudo' if new_user_is_admin else '',
                                       interfaces=INTERFACES,
-                                      update = 'true' if (runtime_deps or update) else 'false',
+                                      update = 'true' if runtime_deps else 'false',
+                                      upgrade = 'true' if upgrade else 'false',
                                       hostname = hostname)
   setup_script_file.write(setup_script)
   setup_script_file.close()
@@ -269,10 +271,12 @@ def setup_rootfs():
   #SETTING ALL IT UP
   ret = subprocess.call(["sudo", "cp", "-v", "tmp/rc.local", "rootfs/etc"])
   ret = subprocess.call(["sudo", "cp", "-a", "tmp/archives", "rootfs/var/cache/apt/"])
+  ret = subprocess.call(["sudo", "cp", "-a", "tmp/lists", "rootfs/var/lib/apt/"])
   ret = subprocess.call(["sudo", "mount", "-t", "proc", "proc", "rootfs/proc"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "/bin/sh", "tmp/setup_script.sh"])
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "tmp/setup_script.sh"])
   ret = subprocess.call(["sudo", "cp", "-au", "rootfs/var/cache/apt/archives/", "tmp/"])
+  ret = subprocess.call(["sudo", "cp", "-au", "rootfs/var/lib/apt/lists/", "tmp/"])
   ret = subprocess.call(["sudo", "umount", "rootfs/proc"])
 
 def setup_network():
