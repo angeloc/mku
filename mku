@@ -301,6 +301,7 @@ def setup_network():
 
 def clean_apt():
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "apt-get", "clean"])
+  ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "-rf", "/var/lib/apt/lists/"])
 
 def pack():
   from datetime import datetime
