@@ -16,8 +16,13 @@
 #along with this program; if not, write to the Free Software
 #Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-UENV = """kernel_file=zImage
+UENV = """
+kernel_file=zImage
 initrd_file=initrd.img
+dtb_file=am335x-boneblack.dtb
+
+initrd_high=0xffffffff
+fdt_high=0xffffffff
 
 console=ttyO0,115200n8
 
@@ -27,9 +32,9 @@ mmcrootfstype=ext4 rootwait fixrtc
 boot_fstype=fat
 xyz_load_image=${boot_fstype}load mmc 0:1 0x80300000 ${kernel_file}
 xyz_load_initrd=${boot_fstype}load mmc 0:1 0x81600000 ${initrd_file}; setenv initrd_size ${filesize}
-xyz_load_dtb=${boot_fstype}load mmc 0:1 0x815f0000 /dtbs/${dtb_file}
+xyz_load_dtb=${boot_fstype}load mmc 0:1 0x815f0000 ${dtb_file}
 
-xyz_mmcboot=run xyz_load_image; run xyz_load_initrd; echo Booting from mmc ...
+xyz_mmcboot=run xyz_load_image; run xyz_load_initrd; run xyz_load_dtb; echo Booting from mmc ...
 
 video_args=setenv video 
 device_args=run video_args; run expansion_args; run mmcargs
@@ -37,7 +42,7 @@ mmcargs=setenv bootargs console=${console} ${optargs} ${video} root=${mmcroot} r
 
 optargs=
 expansion_args=setenv expansion ip=${ip_method}
-loaduimage=run xyz_mmcboot; run device_args; bootz 0x80300000 0x81600000:${initrd_size}
+loaduimage=run xyz_mmcboot; run device_args; bootz 0x80300000 0x81600000:${initrd_size} 0x815f0000
 """
 
 CONSOLE="""
@@ -124,7 +129,7 @@ def board_prepare():
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "dpkg", "-i", "/tmp/" + firmware_name])
   
   #installing dtbs
-  ret = subprocess.call(["tar", "zxvf", dtbs_path, "am335x-boneblack.dtb", "-C", "boot"])
+  ret = subprocess.call(["tar", "zxvf", dtbs_path, "-C", "boot", "am335x-boneblack.dtb"])
   
   #cleaning
   ret = subprocess.call(["sudo", "chroot", rootfs_path, "rm", "/tmp/" + kernel_name])
