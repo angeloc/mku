@@ -85,6 +85,7 @@ rm -rf /usr/share/doc/
 rm -rf /usr/share/doc-base/
 dpkg --purge man-db manpages
 rm -rf /usr/share/man/
+rm /etc/tty[1-6].conf
 """
 
 RCLOCAL = """
@@ -281,10 +282,12 @@ def setup_rootfs():
 
 def setup_network():
   global INTERFACES
+  global runtime_deps
   print("Configuring network interfaces")
   INTERFACES += ("auto lo \n"
                  "iface lo inet loopback \n\n")
-  if use_dhcp == "yes":
+  if use_dhcp:
+      runtime_deps += " isc-dhcp-client"
       INTERFACES +=  ("auto {interface} \n"
                      "iface {interface} inet dhcp \n".format(interface=interface))
   else:
