@@ -24,10 +24,10 @@ import sys
 import importlib
 import inspect
 
-DEPS = ["qemu-arm-static", "curl"]
-DEPS_PACKAGES = ["qemu-user-static","curl"]
+DEPS = ["qemu-arm-static", "curl", "mkimage"]
+DEPS_PACKAGES = ["qemu-user-static","curl", "uboot-mkimage"]
 BOARD_CONFIGS_PATH = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) , "boards")
-PRECISE_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/precise/release/ubuntu-core-12.04.2-core-armhf.tar.gz"
+PRECISE_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/precise/release/ubuntu-core-12.04.3-core-armhf.tar.gz"
 QUANTAL_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/quantal/release/ubuntu-core-12.10-core-armhf.tar.gz"
 PROJECT_FILENAME = "project.mku"
 
@@ -85,7 +85,7 @@ rm -rf /usr/share/doc/
 rm -rf /usr/share/doc-base/
 dpkg --purge man-db manpages
 rm -rf /usr/share/man/
-rm /etc/tty[1-6].conf
+rm /etc/init/tty[1-6].conf
 """
 
 RCLOCAL = """

@@ -104,7 +104,7 @@ respawn
 exec /sbin/getty 115200 ttymxc1
 """
 
-KERNEL_SUFFIX    = "-boundary-imx_3.0.35_1.1.1"
+SUPPORT_URL = "http://commondatastorage.googleapis.com/boundarydevices.com/imx6_kernel_overlay.tar.gz"
 
 import subprocess
 import os
@@ -123,15 +123,10 @@ def board_prepare():
   ************************************************************************
   """)
   
-  #Getting KERNEL
-  kernel_path = os.path.join(KERNEL_PATH, "uImage" + KERNEL_SUFFIX)
-  print(kernel_path)
-  ret = subprocess.call(["sudo", "cp", "-av" , kernel_path, "boot"])
-  
-  #Getting MODULES
-  modules_path = os.path.join(KERNEL_PATH,  "modules" + KERNEL_SUFFIX + ".tar.gz")
-  print(modules_path)
-  ret = subprocess.call(["sudo", "tar", "xzfv", modules_path, "-C", "rootfs"])
+  #Getting support files
+  support_path = os.path.join(os.getcwd(), "tmp", "imx6_kernel_overlay.tar.gz")
+  print(support_path)
+  ret = subprocess.call(["curl" , "-#", "-o", support_path, "-C", "-", SUPPORT_URL])
   
   #Setting up bootscript
   bootcmd_path = os.path.join(os.getcwd(), "tmp", "boot.cmd")
@@ -154,6 +149,10 @@ def board_prepare():
   console.write(CONSOLE)
   console.close()
   ret = subprocess.call(["sudo", "cp" , console_path, "rootfs/etc/init/"])
+  
+  #Extract kernel and modules
+  ret = subprocess.call(["sudo", "tar", "xzvf", support_path, "-C", "boot", "boot/uImage"])
+  ret = subprocess.call(["sudo", "tar", "xzvf", support_path, "-C", "rootfs", "lib"])
 
 def prepare_kernel_devenv():
   import os
