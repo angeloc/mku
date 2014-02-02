@@ -27,8 +27,15 @@ import inspect
 DEPS = ["qemu-arm-static", "curl", "mkimage"]
 DEPS_PACKAGES = ["qemu-user-static","curl", "uboot-mkimage"]
 BOARD_CONFIGS_PATH = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) , "boards")
-PRECISE_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/precise/release/ubuntu-core-12.04.3-core-armhf.tar.gz"
-QUANTAL_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/quantal/release/ubuntu-core-12.10-core-armhf.tar.gz"
+PRECISE_ARMHF_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/precise/release/ubuntu-core-12.04.3-core-armhf.tar.gz"
+QUANTAL_ARMHF_CORE_URL = "http://cdimage.ubuntu.com/ubuntu-core/releases/quantal/release/ubuntu-core-12.10-core-armhf.tar.gz"
+RARING_ARMHF_CORE_URL  = "http://cdimage.ubuntu.com/ubuntu-core/releases/raring/release/ubuntu-core-13.04-core-armhf.tar.gz"
+SAUCY_ARMHF_CORE_URL   = "http://cdimage.ubuntu.com/ubuntu-core/releases/saucy/release/ubuntu-core-13.10-core-armhf.tar.gz"
+WHEEZY_ARMEL_CORE_URL  = "http://rcn-ee.net/deb/minfs/wheezy/debian-7.3-minimal-armel-2013-12-18.tar.xz"
+WHEEZY_ARMHF_CORE_URL  = "http://rcn-ee.net/deb/minfs/wheezy/debian-7.3-minimal-armhf-2013-12-18.tar.xz"
+
+SUPPORTED_VERSIONS = ("PRECISE", "QUANTAL", "RARING", "SAUCY", "WHEEZY")
+
 PROJECT_FILENAME = "project.mku"
 
 #GLOBAL VARIABLES
@@ -37,7 +44,7 @@ append_timest     = None
 core_url          = None
 os_version        = None
 board_script      = None
-runtime_deps      = None
+packages          = None
 root_password     = None
 new_user          = None
 new_user_password = None
@@ -52,6 +59,8 @@ dns_servers       = None
 boardlib          = None
 upgrade           = None
 hostname          = None
+arch              = None
+custom_url        = None
 
 rootfs_path = os.path.join(os.getcwd(), "rootfs")
 boot_path = os.path.join(os.getcwd(), "boot")
@@ -76,7 +85,7 @@ echo "Setting packages ..."
 sed -i "/^# deb .*universe/ s/^# //g" /etc/apt/sources.list
 sed -i "/^deb-src.*/ s/^/# /g" /etc/apt/sources.list
 {update} && apt-get update
-{update} && apt-get -y --force-yes install {runtime_deps}
+{update} && apt-get -y --force-yes install {packages}
 {update} && apt-get -f -y --force-yes install
 {upgrade} && apt-get -y --force-yes upgrade
 
@@ -132,7 +141,7 @@ def get_configuration():
   global append_timest
   global os_version
   global board_script
-  global runtime_deps
+  global packages
   global root_password
   global new_user
   global new_user_password
@@ -146,6 +155,8 @@ def get_configuration():
   global dns_servers
   global upgrade
   global hostname
+  global arch
+  global custom_url
   
   global boardlib
   
@@ -162,9 +173,10 @@ def get_configuration():
     name          = config['PROJECT']['NAME']
     append_timest = True if config['PROJECT']['APPEND_TIMESTAMP'] == 'yes' else False
     os_version    = config['ROOTFS']['VERSION'].upper()
+    arch          = config['ROOTFS']['ARCH'].upper()
     board_script  = config['ROOTFS']['BOARD']
     upgrade       = True if config['ROOTFS']['UPGRADE'] == 'yes' else False
-    runtime_deps  = config['ROOTFS']['RUNTIME_DEPS']
+    packages      = config['ROOTFS']['PACKAGES']
     root_password = config['ROOTFS']['ROOT_PASSWORD']
     hostname      = config['NETWORK']['HOSTNAME']
   except Exception as ex:
@@ -184,6 +196,11 @@ def get_configuration():
     pass
   
   try:
+    custom_url        = config['ROOTFS']['CUSTOM_URL']
+  except:
+    pass
+  
+  try:
     interface   = config['NETWORK']['INTERFACE']
     use_dhcp    = True if config['NETWORK']['USE_DHCP'] == 'yes' else False
     address     = config['NETWORK']['ADDRESS']
@@ -193,11 +210,22 @@ def get_configuration():
   except:
     pass
   
-  if os_version not in ("PRECISE", "QUANTAL"):
-    print("Versions other than precise, quantal are not supperted yet")
+  if os_version not in SUPPORTED_VERSIONS:
+    print("Versions other than", SUPPORTED_VERSIONS, "are not supperted yet")
     exit(1)
   
-  core_url = eval(os_version + "_CORE_URL")
+  if arch not in ("ARMEL", "ARMHF"):
+    print("Arch other than ARMEL, ARMHF, are not supperted")
+    exit(1)
+
+  try:
+    if custom_url:
+      core_url = custom_url
+    else:
+      core_url = eval(os_version + "_" + arch + "_CORE_URL")
+  except:
+    print("Unsupported combination of distro and architecture")
+    
   return True
 
 def deps_installed():
@@ -231,11 +259,11 @@ def prepare():
   clean_apt()
 
 def setup_core():
-  filepath = os.path.join(os.getcwd(), "tmp", os_version + "-ubuntu-core.tar.gz")
+  filepath = os.path.join(os.getcwd(), "tmp", os_version + "-core.tar.gz")
   print(core_url)
   ret = subprocess.call(["curl" , "-#", "-o", filepath, "-C", "-", core_url])
   print("To extract Ubuntu core we need root permission, please provide password if requested")
-  ret = subprocess.call(["sudo", "tar", "zxfk", filepath, "-C", rootfs_path])
+  ret = subprocess.call(["sudo", "tar", "axfk", filepath, "-C", rootfs_path])
   ret = subprocess.call(["sudo", "cp" , "/usr/bin/qemu-arm-static", "rootfs/usr/bin/"])
   if ret:
     print("Something went wrong when extracting rootfs")
@@ -249,7 +277,7 @@ def setup_rootfs():
   #CONFIGURING SETUP SCRIPT
   setup_script_path = os.path.join(rootfs_path, "tmp", "setup_script.sh")
   setup_script_file = open(setup_script_path, "w")
-  setup_script = SETUP_SCRIPT.format(runtime_deps=runtime_deps,
+  setup_script = SETUP_SCRIPT.format(packages=packages,
                                       set_root_password = 'true' if root_password else 'false',
                                       root_password=root_password,
                                       set_new_user = 'true' if new_user else 'false',
@@ -257,7 +285,7 @@ def setup_rootfs():
                                       new_user_password=new_user_password,
                                       is_admin = '-G adm,sudo' if new_user_is_admin else '',
                                       interfaces=INTERFACES,
-                                      update = 'true' if runtime_deps else 'false',
+                                      update = 'true' if packages else 'false',
                                       upgrade = 'true' if upgrade else 'false',
                                       hostname = hostname)
   setup_script_file.write(setup_script)
@@ -282,12 +310,12 @@ def setup_rootfs():
 
 def setup_network():
   global INTERFACES
-  global runtime_deps
+  global packages
   print("Configuring network interfaces")
   INTERFACES += ("auto lo \n"
                  "iface lo inet loopback \n\n")
   if use_dhcp:
-      runtime_deps += " isc-dhcp-client"
+      packages += " isc-dhcp-client"
       INTERFACES +=  ("auto {interface} \n"
                      "iface {interface} inet dhcp \n".format(interface=interface))
   else:
