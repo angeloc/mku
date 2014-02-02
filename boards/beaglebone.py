@@ -59,8 +59,11 @@ import subprocess
 import os
 
 def board_prepare():
-  KERNEL_URL    = eval(os_version + "_KERNEL_URL")
-  KERNEL_SUFFIX = eval(os_version + "_KERNEL_SUFFIX")
+  try:
+	KERNEL_URL    = eval(os_version + "_KERNEL_URL")
+	KERNEL_SUFFIX = eval(os_version + "_KERNEL_SUFFIX")
+  except:
+	print("No %s suppport for beaglebone" % os_version)
   
   #Getting MLO
   mlo_path = os.path.join(os.getcwd(), "tmp", "MLO")

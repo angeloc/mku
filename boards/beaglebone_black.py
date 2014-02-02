@@ -61,8 +61,17 @@ PRECISE_DTBS_URL = "http://rcn-ee.net/deb/precise-armhf/v3.8.13-bone24/3.8.13-bo
 QUANTAL_KERNEL_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.8.13-bone24/linux-image-3.8.13-bone24_1.0quantal_armhf.deb"
 QUANTAL_FIRMWARE_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.8.13-bone24/linux-firmware-image_1.0quantal_all.deb"
 QUANTAL_DTBS_URL = "http://rcn-ee.net/deb/quantal-armhf/v3.8.13-bone24/3.8.13-bone24-dtbs.tar.gz"
+RARING_KERNEL_URL = "http://rcn-ee.net/deb/raring-armhf/v3.13.1-bone5/linux-image-3.13.1-bone5_1.0raring_armhf.deb"
+RARING_FIRMWARE_URL = "http://rcn-ee.net/deb/raring-armhf/v3.13.1-bone5/linux-firmware-image-3.13.1-bone5_1.0raring_all.deb"
+RARING_DTBS_URL = "http://rcn-ee.net/deb/raring-armhf/v3.13.1-bone5/3.13.1-bone5-dtbs.tar.gz"
+SAUCY_KERNEL_URL = "http://rcn-ee.net/deb/saucy-armhf/v3.13.1-bone5/linux-image-3.13.1-bone5_1.0saucy_armhf.deb"
+SAUCY_FIRMWARE_URL = "http://rcn-ee.net/deb/saucy-armhf/v3.13.1-bone5/linux-firmware-image-3.13.1-bone5_1.0saucy_all.deb"
+SAUCY_DTBS_URL = "http://rcn-ee.net/deb/saucy-armhf/v3.13.1-bone5/3.13.1-bone5-dtbs.tar.gz"
+
 PRECISE_KERNEL_SUFFIX = "-3.8.13-bone24"
 QUANTAL_KERNEL_SUFFIX = "-3.8.13-bone24"
+RARING_KERNEL_SUFFIX  = "-3.13.1-bone5"
+SAUCY_KERNEL_SUFFIX  = "-3.13.1-bone5"
 
 import subprocess
 import os

@@ -1,0 +1,36 @@
+[PROJECT]
+name = demo
+append_timestamp = yes
+
+[ROOTFS]
+# Distro version, choose from PRECISE, QUANTAL, RARING, SAUCY, WHEEZY
+VERSION       = precise
+
+# Architecture, choose between ARMEL, ARMHF
+ARCH          = armhf
+
+# You can obtain a list of supported boards with "mku list"
+BOARD         = beaglebone
+
+# Upgrade the rootfs while building
+UPGRADE       = no
+
+# Software you want added to the final rootfs
+PACKAGES      = 
+
+# Choose a root password here if you want root user enabled
+ROOT_PASSWORD =
+
+# User to be added to the rootfs
+# USER          = tmpuser
+# PASSWORD      = tmppwd
+# USER_IS_ADMIN = no
+
+[NETWORK]
+HOSTNAME    = demo
+INTERFACE   = eth0
+USE_DHCP    = yes
+ADDRESS     = 192.168.1.100
+NETMASK     = 255.255.255.0
+GATEWAY     = 192.168.1.254
+DNS_SERVERS = 8.8.8.8 8.8.4.4
