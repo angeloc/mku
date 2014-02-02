@@ -29,7 +29,7 @@ How to use
 
 * Create a folder for the new rootfs like `mkurootfs`.
 
-* Copy `project-sample.mku` to `mkurootfs/project.mku`.
+* Copy `samples/project-sample.mku` to `mkurootfs/project.mku`.
 
 * Change `project.mku` default values to suite your needs.
 
